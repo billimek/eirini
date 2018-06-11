@@ -3,6 +3,8 @@ package k8s
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 
 	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/launcher"
@@ -74,6 +76,33 @@ func (d *Desirer) List(ctx context.Context) ([]opi.LRP, error) {
 	return d.deploymentManager.ListLRPs(d.KubeNamespace)
 }
 
+func (d *Desirer) Get(ctx context.Context, name string) (*opi.LRP, error) {
+	deployment, err := d.Client.AppsV1beta1().Deployments(d.KubeNamespace).Get(name, av1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	containers := deployment.Spec.Template.Spec.Containers
+	assertSingleContainer(containers)
+	container := containers[0]
+
+	return &opi.LRP{
+		Name:            deployment.Name,
+		Image:           container.Image,
+		Command:         container.Command,
+		Env:             toMap(container.Env),
+		TargetInstances: int(*deployment.Spec.Replicas),
+	}, nil
+}
+
+func toMap(envVars []v1.EnvVar) map[string]string {
+	result := make(map[string]string)
+	for _, env := range envVars {
+		result[env.Name] = env.Value
+	}
+	return result
+}
+
 func toDeployment(lrp opi.LRP) *v1beta1.Deployment {
 	environment := launcher.SetupEnv(lrp.Command[0])
 	deployment := &v1beta1.Deployment{
@@ -81,7 +110,7 @@ func toDeployment(lrp opi.LRP) *v1beta1.Deployment {
 			Replicas: int32ptr(lrp.TargetInstances),
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
-					Containers: []v1.Container{{
+					Containers: asMultipleContainers(v1.Container{
 						Name:  "web",
 						Image: lrp.Image,
 						Command: []string{
@@ -94,7 +123,7 @@ func toDeployment(lrp opi.LRP) *v1beta1.Deployment {
 								ContainerPort: 8080,
 							},
 						},
-					}},
+					}),
 				},
 			},
 		},
@@ -116,6 +145,19 @@ func toDeployment(lrp opi.LRP) *v1beta1.Deployment {
 	}
 
 	return deployment
+}
+
+// The Kubernetes API expects multiple containers but we only ever need one.
+func asMultipleContainers(container v1.Container) []v1.Container {
+	return []v1.Container{container}
+}
+
+// Enforce our assumption that there's only ever exactly one container holding the app.
+func assertSingleContainer(containers []v1.Container) {
+	if len(containers) != 1 {
+		message := fmt.Sprintf("Unexpectedly, container count is not 1 but %d.", len(containers))
+		panic(errors.New(message))
+	}
 }
 
 func exposeDeployment(lrp opi.LRP, namespace string) (*v1.Service, error) {

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/k8s"
@@ -74,6 +75,11 @@ var _ = Describe("Desiring some LRPs", func() {
 		}
 	}
 
+	cleanupDeployment := func(appName string) {
+		if err := client.AppsV1beta1().Deployments(namespace).Delete(appName, &metav1.DeleteOptions{}); err != nil {
+			panic(err)
+		}
+	}
 	BeforeEach(func() {
 		config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
 		if err != nil {
@@ -206,6 +212,92 @@ var _ = Describe("Desiring some LRPs", func() {
 
 	})
 
+	Context("Get LRP by name", func() {
+
+		var (
+			appName  string
+			image    string
+			command  []string
+			replicas int32
+			lrp      *opi.LRP
+			err      error
+		)
+
+		Context("When it exists", func() {
+			BeforeEach(func() {
+				appName = "test-app"
+				image = "busybox"
+				command = []string{"ls", "-la"}
+				replicas = int32(2)
+
+				expectedDep := &v1beta1.Deployment{
+					Spec: v1beta1.DeploymentSpec{
+						Replicas: &replicas,
+						Template: v1.PodTemplateSpec{
+							Spec: v1.PodSpec{
+								Containers: []v1.Container{
+									v1.Container{
+										Name:    "cont",
+										Image:   image,
+										Command: command,
+										Env:     []v1.EnvVar{v1.EnvVar{Name: "GOPATH", Value: "~/go"}},
+									},
+								},
+							},
+						},
+					},
+				}
+				expectedDep.Name = appName
+				expectedDep.Spec.Template.Labels = map[string]string{
+					"name": appName,
+				}
+
+				_, err := client.AppsV1beta1().Deployments(namespace).Create(expectedDep)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			JustBeforeEach(func() {
+				lrp, err = desirer.Get(context.Background(), appName)
+			})
+
+			It("should return the correct LRP", func() {
+				Expect(lrp.Name).To(Equal(appName))
+				Expect(lrp.Image).To(Equal(image))
+				Expect(lrp.Command).To(Equal(command))
+				Expect(lrp.Env).To(Equal(map[string]string{"GOPATH": "~/go"}))
+				Expect(lrp.TargetInstances).To(Equal(int(replicas)))
+			})
+
+			It("should not return an error", func() {
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				cleanupDeployment("test-app")
+				Eventually(listDeployments, 5*time.Second).Should(BeEmpty())
+			})
+		})
+
+		Context("when it does not exist", func() {
+
+			var (
+				lrp *opi.LRP
+				err error
+			)
+
+			JustBeforeEach(func() {
+				lrp, err = desirer.Get(context.Background(), "test-app")
+			})
+
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("should not return a LRP", func() {
+				Expect(lrp).To(BeNil())
+			})
+
+		})
 	PIt("Removes any LRPs in the namespace that are no longer desired", func() {
 	})
 
