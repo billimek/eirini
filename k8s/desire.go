@@ -95,6 +95,15 @@ func (d *Desirer) Get(ctx context.Context, name string) (*opi.LRP, error) {
 	}, nil
 }
 
+func (d *Desirer) Scale(appName string, instanceCount int) error {
+	deployment, _ := d.Client.AppsV1beta1().Deployments(d.KubeNamespace).Get(appName, av1.GetOptions{})
+	count := int32(instanceCount)
+	deployment.Spec.Replicas = &count
+
+	_, err := d.Client.AppsV1beta1().Deployments(d.KubeNamespace).Update(deployment)
+	return err
+}
+
 func toMap(envVars []v1.EnvVar) map[string]string {
 	result := make(map[string]string)
 	for _, env := range envVars {
