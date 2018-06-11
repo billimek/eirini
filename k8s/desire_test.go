@@ -327,6 +327,65 @@ var _ = Describe("Desiring some LRPs", func() {
 			})
 
 		})
+	})
+
+	Context("Scale an app", func() {
+		var (
+			appName  string
+			image    string
+			command  []string
+			replicas int32
+		)
+
+		BeforeEach(func() {
+			appName = "test-app"
+			image = "busybox"
+			command = []string{"ls", "-la"}
+			replicas = int32(2)
+
+			expectedDep := &v1beta1.Deployment{
+				Spec: v1beta1.DeploymentSpec{
+					Replicas: &replicas,
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								v1.Container{
+									Name:    "cont",
+									Image:   image,
+									Command: command,
+									Env:     []v1.EnvVar{v1.EnvVar{Name: "GOPATH", Value: "~/go"}},
+								},
+							},
+						},
+					},
+				},
+			}
+			expectedDep.Name = appName
+			expectedDep.Spec.Template.Labels = map[string]string{
+				"name": appName,
+			}
+
+			_, err := client.AppsV1beta1().Deployments(namespace).Create(expectedDep)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("scales the app without error", func() {
+			err := desirer.Scale(appName, 5)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("creates the desired number of app instances", func() {
+			Eventually(func() int32 {
+				dep, _ := client.AppsV1beta1().Deployments(namespace).Get(appName, av1.GetOptions{})
+				return *dep.Spec.Replicas
+			}, 5*time.Second).Should(Equal(int32(5)))
+
+		})
+
+		AfterEach(func() {
+			cleanupDeployment("test-app")
+			Eventually(listDeployments, 5*time.Second).Should(BeEmpty())
+		})
 
 	})
 })
