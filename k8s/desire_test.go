@@ -75,11 +75,32 @@ var _ = Describe("Desiring some LRPs", func() {
 		}
 	}
 
+	listDeployments := func() []v1beta1.Deployment {
+		list, err := client.AppsV1beta1().Deployments(namespace).List(av1.ListOptions{})
+		Expect(err).NotTo(HaveOccurred())
+		return list.Items
+	}
+
+	listServices := func() []v1.Service {
+		list, err := client.CoreV1().Services(namespace).List(av1.ListOptions{})
+		Expect(err).NotTo(HaveOccurred())
+		return list.Items
+	}
+
 	cleanupDeployment := func(appName string) {
 		if err := client.AppsV1beta1().Deployments(namespace).Delete(appName, &metav1.DeleteOptions{}); err != nil {
 			panic(err)
 		}
 	}
+
+	cleanupService := func(appName string) {
+		serviceName := eirini.GetInternalServiceName(appName)
+		if err := client.CoreV1().Services(namespace).Delete(serviceName, &metav1.DeleteOptions{}); err != nil {
+			panic(err)
+		}
+
+	}
+
 	BeforeEach(func() {
 		config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
 		if err != nil {
@@ -138,15 +159,11 @@ var _ = Describe("Desiring some LRPs", func() {
 
 			AfterEach(func() {
 				for _, appName := range getLRPNames() {
-					if err := client.AppsV1beta1().Deployments(namespace).Delete(appName, &metav1.DeleteOptions{}); err != nil {
-						panic(err)
-					}
-
-					serviceName := eirini.GetInternalServiceName(appName)
-					if err := client.CoreV1().Services(namespace).Delete(serviceName, &metav1.DeleteOptions{}); err != nil {
-						panic(err)
-					}
+					cleanupDeployment(appName)
+					cleanupService(appName)
 				}
+				Eventually(listDeployments, 5*time.Second).Should(BeEmpty())
+				Eventually(listServices, 5*time.Second).Should(BeEmpty())
 			})
 
 			It("Creates deployments for every LRP in the array", func() {
@@ -196,16 +213,28 @@ var _ = Describe("Desiring some LRPs", func() {
 
 		Context("When the IngressManager failes to update", func() {
 
-			var expectedErr error
+			var (
+				expectedErr error
+				lrp         opi.LRP
+			)
 
 			BeforeEach(func() {
+				lrp = lrps[0]
 				expectedErr = errors.New("failed to update ingress")
 				ingressManager.UpdateIngressReturns(expectedErr)
 			})
 
 			It("Propagates the error", func() {
-				actualErr := desirer.Desire(context.Background(), lrps)
+				actualErr := desirer.Desire(context.Background(), []opi.LRP{lrp})
 				Expect(actualErr).To(Equal(expectedErr))
+			})
+
+			AfterEach(func() {
+				cleanupDeployment(lrp.Name)
+				Eventually(listDeployments, 5*time.Second).Should(BeEmpty())
+
+				cleanupService(lrp.Name)
+				Eventually(listServices, 5*time.Second).Should(BeEmpty())
 			})
 
 		})
@@ -298,9 +327,6 @@ var _ = Describe("Desiring some LRPs", func() {
 			})
 
 		})
-	PIt("Removes any LRPs in the namespace that are no longer desired", func() {
-	})
 
-	PIt("Updates any LRPs whose etag annotation has changed", func() {
 	})
 })
