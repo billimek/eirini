@@ -84,6 +84,7 @@ type Extractor interface {
 type Bifrost interface {
 	Transfer(ctx context.Context, ccMessages []cc_messages.DesireAppRequestFromCC) error
 	List(ctx context.Context) ([]*models.DesiredLRPSchedulingInfo, error)
+	Update(ctx context.Context, update models.UpdateDesiredLRPRequest) error
 }
 
 func GetInternalServiceName(appName string) string {

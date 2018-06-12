@@ -241,6 +241,33 @@ var _ = Describe("Desiring some LRPs", func() {
 
 	})
 
+	createDeployment := func(appName, image string, replicas int32, command []string) *v1beta1.Deployment {
+		deployment := &v1beta1.Deployment{
+			Spec: v1beta1.DeploymentSpec{
+				Replicas: &replicas,
+				Template: v1.PodTemplateSpec{
+					Spec: v1.PodSpec{
+						Containers: []v1.Container{
+							v1.Container{
+								Name:    "cont",
+								Image:   image,
+								Command: command,
+								Env:     []v1.EnvVar{v1.EnvVar{Name: "GOPATH", Value: "~/go"}},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		deployment.Name = appName
+		deployment.Spec.Template.Labels = map[string]string{
+			"name": appName,
+		}
+
+		return deployment
+	}
+
 	Context("Get LRP by name", func() {
 
 		var (
@@ -259,28 +286,7 @@ var _ = Describe("Desiring some LRPs", func() {
 				command = []string{"ls", "-la"}
 				replicas = int32(2)
 
-				expectedDep := &v1beta1.Deployment{
-					Spec: v1beta1.DeploymentSpec{
-						Replicas: &replicas,
-						Template: v1.PodTemplateSpec{
-							Spec: v1.PodSpec{
-								Containers: []v1.Container{
-									v1.Container{
-										Name:    "cont",
-										Image:   image,
-										Command: command,
-										Env:     []v1.EnvVar{v1.EnvVar{Name: "GOPATH", Value: "~/go"}},
-									},
-								},
-							},
-						},
-					},
-				}
-				expectedDep.Name = appName
-				expectedDep.Spec.Template.Labels = map[string]string{
-					"name": appName,
-				}
-
+				expectedDep := createDeployment(appName, image, replicas, command)
 				_, err := client.AppsV1beta1().Deployments(namespace).Create(expectedDep)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -329,63 +335,88 @@ var _ = Describe("Desiring some LRPs", func() {
 		})
 	})
 
-	Context("Scale an app", func() {
-		var (
-			appName  string
-			image    string
-			command  []string
-			replicas int32
-		)
+	Context("Update an app", func() {
+		Context("when the app exists", func() {
 
-		BeforeEach(func() {
-			appName = "test-app"
-			image = "busybox"
-			command = []string{"ls", "-la"}
-			replicas = int32(2)
+			var (
+				appName  string
+				image    string
+				command  []string
+				replicas int32
+			)
 
-			expectedDep := &v1beta1.Deployment{
-				Spec: v1beta1.DeploymentSpec{
-					Replicas: &replicas,
-					Template: v1.PodTemplateSpec{
-						Spec: v1.PodSpec{
-							Containers: []v1.Container{
-								v1.Container{
-									Name:    "cont",
-									Image:   image,
-									Command: command,
-									Env:     []v1.EnvVar{v1.EnvVar{Name: "GOPATH", Value: "~/go"}},
-								},
-							},
-						},
-					},
-				},
-			}
-			expectedDep.Name = appName
-			expectedDep.Spec.Template.Labels = map[string]string{
-				"name": appName,
-			}
+			BeforeEach(func() {
+				appName = "test-app"
+				image = "busybox"
+				command = []string{"ls", "-la"}
+				replicas = int32(2)
 
-			_, err := client.AppsV1beta1().Deployments(namespace).Create(expectedDep)
-			Expect(err).NotTo(HaveOccurred())
+				expectedDep := createDeployment(appName, image, replicas, command)
+				_, err := client.AppsV1beta1().Deployments(namespace).Create(expectedDep)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			Context("with replica count modified", func() {
+
+				var err error
+
+				getDeployment := func(appName string) *v1beta1.Deployment {
+					dep, err := client.AppsV1beta1().Deployments(namespace).Get(appName, av1.GetOptions{})
+					Expect(err).ToNot(HaveOccurred())
+					return dep
+				}
+
+				JustBeforeEach(func() {
+					err = desirer.Update(context.Background(), opi.LRP{Name: appName, TargetInstances: 5})
+				})
+
+				It("scales the app without error", func() {
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("updates the desired number of app instances", func() {
+					Eventually(func() int32 {
+						return *getDeployment(appName).Spec.Replicas
+					}, 5*time.Second).Should(Equal(int32(5)))
+				})
+
+				It("creates the desired number of app instances", func() {
+					Eventually(func() int32 {
+						return getDeployment(appName).Status.Replicas
+					}, 5*time.Second).Should(Equal(int32(5)))
+
+					Eventually(func() int32 {
+						return getDeployment(appName).Status.UpdatedReplicas
+					}, 5*time.Second).Should(Equal(int32(5)))
+				})
+
+				AfterEach(func() {
+					cleanupDeployment(appName)
+					Eventually(listDeployments, 5*time.Second).Should(BeEmpty())
+				})
+			})
 		})
 
-		It("scales the app without error", func() {
-			err := desirer.Scale(appName, 5)
-			Expect(err).ToNot(HaveOccurred())
+		Context("when the app does not exist", func() {
+
+			var (
+				err     error
+				appName string
+			)
+
+			JustBeforeEach(func() {
+				err = desirer.Update(context.Background(), opi.LRP{Name: appName, TargetInstances: 2})
+			})
+
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("should not create the app", func() {
+				_, err := client.AppsV1beta1().Deployments(namespace).Get(appName, av1.GetOptions{})
+				Expect(err).To(HaveOccurred())
+			})
 		})
-
-		It("creates the desired number of app instances", func() {
-			Eventually(func() int32 {
-				dep, _ := client.AppsV1beta1().Deployments(namespace).Get(appName, av1.GetOptions{})
-				return *dep.Spec.Replicas
-			}, 5*time.Second).Should(Equal(int32(5)))
-
-		})
-
-		AfterEach(func() {
-			cleanupDeployment("test-app")
-			Eventually(listDeployments, 5*time.Second).Should(BeEmpty())
-		})
-
 	})
+
 })

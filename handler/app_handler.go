@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"code.cloudfoundry.org/bbs/models"
@@ -68,4 +69,36 @@ func (a *AppHandler) List(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 
 	w.Write([]byte(result))
+}
+
+func (a *AppHandler) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	var request models.UpdateDesiredLRPRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		a.logger.Error("json-decoding-failure", err)
+		writeUpdateErrorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+
+	guid := ps.ByName("process_guid")
+	if guid != request.ProcessGuid {
+		a.logger.Error("process-guid-mismatch", nil, lager.Data{"update-app-process-guid": request.ProcessGuid})
+		writeUpdateErrorResponse(w, errors.New("Process guid missmatch"), http.StatusBadRequest)
+		return
+	}
+
+	if err := a.bifrost.Update(r.Context(), request); err != nil {
+		a.logger.Error("update-app-failed", err)
+		writeUpdateErrorResponse(w, err, http.StatusInternalServerError)
+	}
+}
+
+func writeUpdateErrorResponse(w http.ResponseWriter, err error, statusCode int) {
+	response := models.DesiredLRPLifecycleResponse{
+		Error: &models.Error{
+			Message: err.Error(),
+		},
+	}
+	body, _ := json.Marshal(response)
+	w.WriteHeader(statusCode)
+	w.Write(body)
 }
