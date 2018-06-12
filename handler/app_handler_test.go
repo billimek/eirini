@@ -2,6 +2,8 @@ package handler_test
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -131,6 +133,103 @@ var _ = Describe("AppHandler", func() {
 
 				Expect(strings.Trim(string(body), "\n")).To(Equal(string(expectedJsonResponse)))
 			})
+		})
+	})
+
+	Context("Update an app", func() {
+		var (
+			path     string
+			body     string
+			response *http.Response
+		)
+
+		verifyResponseObject := func() {
+			var responseObj models.DesiredLRPLifecycleResponse
+			err := json.NewDecoder(response.Body).Decode(&responseObj)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(responseObj.Error.Message).ToNot(BeNil())
+		}
+
+		BeforeEach(func() {
+			path = "/apps/myguid"
+			body = `{"process_guid": "myguid", "update": {"instances": 5}}`
+		})
+
+		JustBeforeEach(func() {
+			ts := httptest.NewServer(New(bifrost, lager))
+			req, err := http.NewRequest("POST", ts.URL+path, bytes.NewReader([]byte(body)))
+			Expect(err).NotTo(HaveOccurred())
+
+			client := &http.Client{}
+			response, err = client.Do(req)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		Context("when the update is successful", func() {
+			BeforeEach(func() {
+				bifrost.UpdateReturns(nil)
+			})
+
+			It("should return a 200 HTTP stauts code", func() {
+				Expect(response.StatusCode).To(Equal(http.StatusOK))
+			})
+
+			It("should translate the request", func() {
+				Expect(bifrost.UpdateCallCount()).To(Equal(1))
+				_, request := bifrost.UpdateArgsForCall(0)
+				Expect(request.ProcessGuid).To(Equal("myguid"))
+				Expect(*request.Update.Instances).To(Equal(int32(5)))
+			})
+		})
+
+		Context("when the endpoint guid does not match the one in the body", func() {
+
+			BeforeEach(func() {
+				body = `{"process_guid": "anotherGUID", "update": {"instances": 5}}`
+			})
+
+			It("should return a 400 HTTP status code", func() {
+				Expect(response.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+
+			It("should return a response object containing the error", func() {
+				verifyResponseObject()
+			})
+
+		})
+
+		Context("when the json is invalid", func() {
+			BeforeEach(func() {
+				body = "{invalid.json"
+			})
+
+			It("should return a 400 Bad Request HTTP status code", func() {
+				Expect(response.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+
+			It("should not update the app", func() {
+				Expect(bifrost.UpdateCallCount()).To(Equal(0))
+			})
+
+			It("should return a response object containing the error", func() {
+				verifyResponseObject()
+			})
+		})
+
+		Context("when update fails", func() {
+			BeforeEach(func() {
+				bifrost.UpdateReturns(errors.New("Failed to update"))
+			})
+
+			It("should return a 500 HTTP status code", func() {
+				Expect(response.StatusCode).To(Equal(http.StatusInternalServerError))
+			})
+
+			It("shoud return a response object containing the error", func() {
+				verifyResponseObject()
+			})
+
 		})
 	})
 })

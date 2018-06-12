@@ -33,7 +33,7 @@ var _ = Describe("Handler", func() {
 	})
 
 	Context("Routes", func() {
-		It("serves a apps/:process_guid endpoint", func() {
+		It("serves a PUT on apps/:process_guid endpoint", func() {
 			req, err := http.NewRequest("PUT", ts.URL+"/apps/myguid", bytes.NewReader([]byte(`{"process_guid": "myguid", "num_instances": 5}`)))
 			Expect(err).ToNot(HaveOccurred())
 			res, err := client.Do(req)
@@ -41,11 +41,21 @@ var _ = Describe("Handler", func() {
 			Expect(res.StatusCode).To(Equal(http.StatusAccepted))
 		})
 
-		It("serves a /apps endpoint", func() {
+		It("serves a GET on /apps endpoint", func() {
 			resp, err := http.Get(ts.URL + "/apps")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		})
+
+		It("serves a POST on apps/:process_guid endpoint", func() {
+			req, err := http.NewRequest("POST", ts.URL+"/apps/myguid", bytes.NewReader([]byte(`{"process_guid": "myguid", "update": {"instances": 5}}`)))
+			Expect(err).ToNot(HaveOccurred())
+
+			resp, err := client.Do(req)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		})
+
 	})
 
 })

@@ -36,6 +36,18 @@ type FakeBifrost struct {
 		result1 []*models.DesiredLRPSchedulingInfo
 		result2 error
 	}
+	UpdateStub        func(ctx context.Context, update models.UpdateDesiredLRPRequest) error
+	updateMutex       sync.RWMutex
+	updateArgsForCall []struct {
+		ctx    context.Context
+		update models.UpdateDesiredLRPRequest
+	}
+	updateReturns struct {
+		result1 error
+	}
+	updateReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -145,6 +157,55 @@ func (fake *FakeBifrost) ListReturnsOnCall(i int, result1 []*models.DesiredLRPSc
 	}{result1, result2}
 }
 
+func (fake *FakeBifrost) Update(ctx context.Context, update models.UpdateDesiredLRPRequest) error {
+	fake.updateMutex.Lock()
+	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
+	fake.updateArgsForCall = append(fake.updateArgsForCall, struct {
+		ctx    context.Context
+		update models.UpdateDesiredLRPRequest
+	}{ctx, update})
+	fake.recordInvocation("Update", []interface{}{ctx, update})
+	fake.updateMutex.Unlock()
+	if fake.UpdateStub != nil {
+		return fake.UpdateStub(ctx, update)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.updateReturns.result1
+}
+
+func (fake *FakeBifrost) UpdateCallCount() int {
+	fake.updateMutex.RLock()
+	defer fake.updateMutex.RUnlock()
+	return len(fake.updateArgsForCall)
+}
+
+func (fake *FakeBifrost) UpdateArgsForCall(i int) (context.Context, models.UpdateDesiredLRPRequest) {
+	fake.updateMutex.RLock()
+	defer fake.updateMutex.RUnlock()
+	return fake.updateArgsForCall[i].ctx, fake.updateArgsForCall[i].update
+}
+
+func (fake *FakeBifrost) UpdateReturns(result1 error) {
+	fake.UpdateStub = nil
+	fake.updateReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeBifrost) UpdateReturnsOnCall(i int, result1 error) {
+	fake.UpdateStub = nil
+	if fake.updateReturnsOnCall == nil {
+		fake.updateReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.updateReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeBifrost) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -152,6 +213,8 @@ func (fake *FakeBifrost) Invocations() map[string][][]interface{} {
 	defer fake.transferMutex.RUnlock()
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
+	fake.updateMutex.RLock()
+	defer fake.updateMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

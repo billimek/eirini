@@ -15,6 +15,7 @@ func New(converger eirini.Bifrost, lager lager.Logger) http.Handler {
 
 	handler.PUT("/apps/:process_guid", appHandler.Desire)
 	handler.GET("/apps", appHandler.List)
+	handler.POST("/apps/:process_guid", appHandler.Update)
 
 	return handler
 }

@@ -95,12 +95,16 @@ func (d *Desirer) Get(ctx context.Context, name string) (*opi.LRP, error) {
 	}, nil
 }
 
-func (d *Desirer) Scale(appName string, instanceCount int) error {
-	deployment, _ := d.Client.AppsV1beta1().Deployments(d.KubeNamespace).Get(appName, av1.GetOptions{})
-	count := int32(instanceCount)
+func (d *Desirer) Update(ctx context.Context, updated opi.LRP) error {
+	deployment, err := d.Client.AppsV1beta1().Deployments(d.KubeNamespace).Get(updated.Name, av1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	count := int32(updated.TargetInstances)
 	deployment.Spec.Replicas = &count
 
-	_, err := d.Client.AppsV1beta1().Deployments(d.KubeNamespace).Update(deployment)
+	_, err = d.Client.AppsV1beta1().Deployments(d.KubeNamespace).Update(deployment)
 	return err
 }
 
