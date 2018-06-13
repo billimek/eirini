@@ -84,8 +84,8 @@ var _ = Describe("Ingress", func() {
 		var err error
 
 		const (
-			ingressAppName = "app-name"
-			lrpName        = "new-app-name"
+			ingressAppName = "app-name-g9zhmer6fc76c1s70llscnpa4dflec26x5bbf8dxukuuqsgy2u3pmpw5nyr58g0lg8cjykxzp3es9g1t"
+			lrpName        = "new-app-name-87gfekyr4eoy7kw0qe0tzpqeam0dv9x4uote956abt2r6co0dwmw2e0cuo5d3y7015fhntzwxhi87thn"
 			vcapName       = "new-vcaapp-name"
 		)
 

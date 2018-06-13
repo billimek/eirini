@@ -102,12 +102,14 @@ func toDeployment(lrp opi.LRP) *v1beta1.Deployment {
 
 	deployment.Name = lrp.Name
 	deployment.Spec.Template.Labels = map[string]string{
-		"name": lrp.Name,
+		"guid":    eirini.GetProcessGuid(lrp.Name),
+		"version": eirini.GetProcessVersion(lrp.Name),
 	}
 
 	deployment.Labels = map[string]string{
-		"eirini": "eirini",
-		"name":   lrp.Name,
+		"eirini":  "eirini",
+		"guid":    eirini.GetProcessGuid(lrp.Name),
+		"version": eirini.GetProcessVersion(lrp.Name),
 	}
 
 	return deployment
@@ -124,7 +126,8 @@ func exposeDeployment(lrp opi.LRP, namespace string) (*v1.Service, error) {
 				},
 			},
 			Selector: map[string]string{
-				"name": lrp.Name,
+				"guid":    eirini.GetProcessGuid(lrp.Name),
+				"version": eirini.GetProcessVersion(lrp.Name),
 			},
 			SessionAffinity: "None",
 		},
@@ -138,10 +141,11 @@ func exposeDeployment(lrp opi.LRP, namespace string) (*v1.Service, error) {
 	service.Name = eirini.GetInternalServiceName(lrp.Name)
 	service.Namespace = namespace
 	service.Labels = map[string]string{
-		"eirini": "eirini",
-		"name":   lrp.Name,
+		"eirini":  "eirini",
+		"guid":    eirini.GetProcessGuid(lrp.Name),
+		"version": eirini.GetProcessVersion(lrp.Name),
 	}
-
+	
 	vcap := parseVcapApplication(lrp.Env["VCAP_APPLICATION"])
 	routes, err := toRouteString(vcap.AppUris)
 	if err != nil {

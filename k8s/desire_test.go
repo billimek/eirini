@@ -94,8 +94,8 @@ var _ = Describe("Desiring some LRPs", func() {
 		}
 
 		lrps = []opi.LRP{
-			{Name: "app0", Image: "busybox", TargetInstances: 1, Command: []string{""}, Env: envFor(vcapAppNames[0], lrpUris[0])},
-			{Name: "app1", Image: "busybox", TargetInstances: 3, Command: []string{""}, Env: envFor(vcapAppNames[1], lrpUris[1])},
+			{Name: "random1-vpenn9rck1mr2gpt5r3rpax417jgly9giydt1yiinfk117dg5lewp83mfsa50okh2g4dlk4ka", Image: "busybox", TargetInstances: 1, Command: []string{""}, Env: envFor(vcapAppNames[0], lrpUris[0])},
+			{Name: "random2-vwlnspyw95z53sgnjjo7dhxm4w8y81hb7lm9hwwflab3veg2ap6lajorwyhdjh273hznny59s", Image: "busybox", TargetInstances: 3, Command: []string{""}, Env: envFor(vcapAppNames[1], lrpUris[1])},
 		}
 
 		ingressManager = new(k8sfakes.FakeIngressManager)

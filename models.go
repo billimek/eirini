@@ -88,5 +88,13 @@ type Bifrost interface {
 
 func GetInternalServiceName(appName string) string {
 	//Prefix service as the appName could start with numerical characters, which is not allowed
-	return fmt.Sprintf("cf-%s", appName)
+	return fmt.Sprintf("cf-%s", GetProcessGuid(appName))
+}
+
+func GetProcessGuid(versionedGuid string) string {
+	return versionedGuid[:35]
+}
+
+func GetProcessVersion(versionedGuid string) string {
+	return versionedGuid[37:]
 }
