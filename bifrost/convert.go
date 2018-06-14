@@ -68,16 +68,6 @@ func envVarsToMap(envs []*models.EnvironmentVariable) map[string]string {
 	return envMap
 }
 
-func merge(maps ...map[string]string) map[string]string {
-	result := make(map[string]string)
-	for _, m := range maps {
-		for k, v := range m {
-			result[k] = v
-		}
-	}
-	return result
-}
-
 func dropletToImageURI(
 	msg cc_messages.DesireAppRequestFromCC,
 	vcap VcapApp,
