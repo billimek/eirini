@@ -30,6 +30,7 @@ func Convert(
 		msg.DockerImageUrl = dropletToImageURI(msg, cfClient, client, registryUrl, registryIP, log)
 	}
 
+	envMap := envVarsToMap(msg.Environment)
 	return opi.LRP{
 		Name:            msg.ProcessGuid,
 		Image:           msg.DockerImageUrl,
@@ -37,8 +38,19 @@ func Convert(
 		Command: []string{
 			msg.StartCommand,
 		},
-		Env: envVarsToMap(msg.Environment),
+		Env:      envMap,
+		Metadata: parseMetadata(envMap),
 	}
+}
+
+func parseMetadata(env map[string]string) map[string]string {
+	var metadata map[string]string
+	if vcap, ok := env["VCAP_APPLICATION"]; ok {
+		if err := json.Unmarshal([]byte(vcap), &metadata); err != nil {
+			panic(err)
+		}
+	}
+	return metadata
 }
 
 func envVarsToMap(envs []*models.EnvironmentVariable) map[string]string {
@@ -57,6 +69,8 @@ func dropletToImageURI(
 	registryIP string,
 	log lager.Logger,
 ) string {
+
+	// we can use the map now instead of appInfo
 	var appInfo eirini.AppInfo
 	for _, v := range msg.Environment {
 		if v.Name == "VCAP_APPLICATION" {

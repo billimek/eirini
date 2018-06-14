@@ -56,7 +56,7 @@ var _ = Describe("Convert CC DesiredApp into an opi LRP", func() {
 			Environment: []*models.EnvironmentVariable{
 				&models.EnvironmentVariable{
 					Name:  "VCAP_APPLICATION",
-					Value: `{"name":"bumblebee", "space_name":"transformers", "application_id":"1234"}`,
+					Value: `{"name":"bumblebee", "space_name":"transformers", "application_id":"1234", "version": "something-something-uuid"}`,
 				},
 			},
 		}, fakeServer.URL(), regIP, cfClient, client, logger)
@@ -65,6 +65,13 @@ var _ = Describe("Convert CC DesiredApp into an opi LRP", func() {
 	// a processGuid is <app-guid>-<version-guid>
 	It("truncates the ProcessGuid so it only contain the app guid", func() {
 		Expect(lrp.Name).To(Equal("b194809b-88c0-49af-b8aa-69da097fc360"))
+	})
+
+	It("stores the VCAP env variable as metadata", func() {
+		Expect(lrp.Metadata["name"]).To(Equal("bumblebee"))
+		Expect(lrp.Metadata["space_name"]).To(Equal("transformers"))
+		Expect(lrp.Metadata["application_id"]).To(Equal("1234"))
+		Expect(lrp.Metadata["version"]).To(Equal("something-something-uuid"))
 	})
 
 	It("Converts droplet apps via the special registry URL", func() {
