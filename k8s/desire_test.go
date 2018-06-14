@@ -35,6 +35,8 @@ var _ = Describe("Desiring some LRPs", func() {
 		lrpUris        [][]string
 	)
 
+	const timeout time.Duration = 60 * time.Second
+
 	namespaceExists := func(name string) bool {
 		_, err := client.CoreV1().Namespaces().Get(namespace, metav1.GetOptions{})
 		return err == nil
@@ -56,6 +58,18 @@ var _ = Describe("Desiring some LRPs", func() {
 			names = append(names, lrp.Name)
 		}
 		return names
+	}
+
+	listDeployments := func() []v1beta1.Deployment {
+		list, err := client.AppsV1beta1().Deployments(namespace).List(av1.ListOptions{})
+		Expect(err).NotTo(HaveOccurred())
+		return list.Items
+	}
+
+	listServices := func() []v1.Service {
+		list, err := client.CoreV1().Services(namespace).List(av1.ListOptions{})
+		Expect(err).NotTo(HaveOccurred())
+		return list.Items
 	}
 
 	// handcraft json in order not to mirror the production implementation
@@ -136,7 +150,7 @@ var _ = Describe("Desiring some LRPs", func() {
 		desirer = k8s.NewDesirer(client, namespace, ingressManager)
 	})
 
-	Context("When a LPP is desired", func() {
+	Context("When a LRP is desired", func() {
 
 		getDeploymentNames := func(deployments *v1beta1.DeploymentList) []string {
 			depNames := []string{}
@@ -162,8 +176,9 @@ var _ = Describe("Desiring some LRPs", func() {
 					cleanupDeployment(appName)
 					cleanupService(appName)
 				}
-				Eventually(listDeployments, 5*time.Second).Should(BeEmpty())
-				Eventually(listServices, 5*time.Second).Should(BeEmpty())
+
+				Eventually(listDeployments, timeout).Should(BeEmpty())
+				Eventually(listServices, timeout).Should(BeEmpty())
 			})
 
 			It("Creates deployments for every LRP in the array", func() {
@@ -172,7 +187,7 @@ var _ = Describe("Desiring some LRPs", func() {
 				deployments, err := client.AppsV1beta1().Deployments(namespace).List(av1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(deployments.Items).To(HaveLen(len(lrps)))
+				Eventually(deployments.Items, timeout).Should(HaveLen(len(lrps)))
 				Expect(getDeploymentNames(deployments)).To(ConsistOf(getLRPNames()))
 			})
 
@@ -181,7 +196,7 @@ var _ = Describe("Desiring some LRPs", func() {
 
 				services, err := client.CoreV1().Services(namespace).List(av1.ListOptions{})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(services.Items).To(HaveLen(len(lrps)))
+				Eventually(services.Items, timeout).Should(HaveLen(len(lrps)))
 			})
 
 			It("Should store URIs", func() {
@@ -195,10 +210,12 @@ var _ = Describe("Desiring some LRPs", func() {
 				}
 			})
 
+			// TODO: Currently mixture of integration and unit tests.
+			// It should be extracted into a separate unit-test suite.
 			It("Adds an ingress rule for each app", func() {
 				Expect(desirer.Desire(context.Background(), lrps)).To(Succeed())
 
-				Expect(ingressManager.UpdateIngressCallCount()).To(Equal(len(lrps)))
+				Eventually(ingressManager.UpdateIngressCallCount(), timeout).Should(Equal(len(lrps)))
 				for i := 0; i < len(lrps); i++ {
 					verifyUpdateIngressArgsForCall(i)
 				}
@@ -211,6 +228,8 @@ var _ = Describe("Desiring some LRPs", func() {
 			})
 		})
 
+		// TODO: Currently mixture of integration and unit tests.
+		// It should be extracted into a separate unit-test suite.
 		Context("When the IngressManager failes to update", func() {
 
 			var (

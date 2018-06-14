@@ -22,29 +22,31 @@ func Convert(
 	client *http.Client,
 	log lager.Logger,
 ) opi.LRP {
-	if len(msg.ProcessGuid) > 36 {
-		msg.ProcessGuid = msg.ProcessGuid[:36]
-	}
-
 	if msg.DockerImageUrl == "" {
 		msg.DockerImageUrl = dropletToImageURI(msg, cfClient, client, registryUrl, registryIP, log)
 	}
 
 	envMap := envVarsToMap(msg.Environment)
+	vcap := parseVcapApplication(envMap)
+
+	metadata := map[string]string{}
+	metadata["process_guid"] = msg.ProcessGuid
+	metadata = merge(metadata, vcap)
+
 	return opi.LRP{
-		Name:            msg.ProcessGuid,
+		Name:            vcap["application_id"],
 		Image:           msg.DockerImageUrl,
 		TargetInstances: msg.NumInstances,
 		Command: []string{
 			msg.StartCommand,
 		},
 		Env:      envMap,
-		Metadata: parseMetadata(envMap),
+		Metadata: metadata,
 	}
 }
 
-func parseMetadata(env map[string]string) map[string]string {
-	var metadata map[string]string
+func parseVcapApplication(env map[string]string) map[string]string {
+	metadata := map[string]string{}
 	if vcap, ok := env["VCAP_APPLICATION"]; ok {
 		if err := json.Unmarshal([]byte(vcap), &metadata); err != nil {
 			panic(err)
@@ -59,6 +61,16 @@ func envVarsToMap(envs []*models.EnvironmentVariable) map[string]string {
 		envMap[v.Name] = v.Value
 	}
 	return envMap
+}
+
+func merge(maps ...map[string]string) map[string]string {
+	result := make(map[string]string)
+	for _, m := range maps {
+		for k, v := range m {
+			result[k] = v
+		}
+	}
+	return result
 }
 
 func dropletToImageURI(
