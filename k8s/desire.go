@@ -105,9 +105,14 @@ func toDeployment(lrp opi.LRP) *v1beta1.Deployment {
 		"name": lrp.Name,
 	}
 
+	vcap := parseVcapApplication(lrp.Env["VCAP_APPLICATION"])
 	deployment.Labels = map[string]string{
 		"eirini": "eirini",
 		"name":   lrp.Name,
+	}
+
+	deployment.Annotations = map[string]string{
+		"version": vcap.AppVersion,
 	}
 
 	return deployment
@@ -155,9 +160,10 @@ func exposeDeployment(lrp opi.LRP, namespace string) (*v1.Service, error) {
 }
 
 type VcapApp struct {
-	AppName   string   `json:"application_name"`
-	AppUris   []string `json:"application_uris"`
-	SpaceName string   `json:"space_name"`
+	AppName    string   `json:"application_name"`
+	AppVersion string   `json:"version"`
+	AppUris    []string `json:"application_uris"`
+	SpaceName  string   `json:"space_name"`
 }
 
 func parseVcapApplication(vcap string) VcapApp {
