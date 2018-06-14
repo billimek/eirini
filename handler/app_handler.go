@@ -71,6 +71,28 @@ func (a *AppHandler) List(w http.ResponseWriter, r *http.Request, ps httprouter.
 	w.Write([]byte(result))
 }
 
+func (a *AppHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	processGuid := ps.ByName("process_guid")
+	desiredLRP := a.bifrost.Get(r.Context(), processGuid)
+	if desiredLRP == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	response := models.DesiredLRPResponse{
+		DesiredLrp: desiredLRP,
+	}
+
+	marshaler := &jsonpb.Marshaler{Indent: "", OrigName: true}
+	result, err := marshaler.MarshalToString(&response)
+	if err != nil {
+		a.logger.Error("encode-json-failed", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte(result))
+}
+
 func (a *AppHandler) Update(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var request models.UpdateDesiredLRPRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
