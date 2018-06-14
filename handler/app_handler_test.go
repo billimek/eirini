@@ -232,6 +232,72 @@ var _ = Describe("AppHandler", func() {
 
 		})
 	})
+
+	Context("get an app", func() {
+		var (
+			path       string
+			response   *http.Response
+			desiredLRP *models.DesiredLRP
+		)
+
+		BeforeEach(func() {
+			path = "/app/guid_1234"
+		})
+
+		JustBeforeEach(func() {
+			ts := httptest.NewServer(New(bifrost, lager))
+			req, err := http.NewRequest("GET", ts.URL+path, nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			client := &http.Client{}
+			response, err = client.Do(req)
+			Expect(err).ToNot(HaveOccurred())
+
+		})
+
+		It("should use the bifrost to get the app", func() {
+			Expect(bifrost.GetCallCount()).To(Equal(1))
+			_, guid := bifrost.GetArgsForCall(0)
+			Expect(guid).To(Equal("guid_1234"))
+		})
+
+		Context("when the app exists", func() {
+			BeforeEach(func() {
+				desiredLRP = &models.DesiredLRP{
+					ProcessGuid: "guid_1234",
+					Instances:   5,
+				}
+				bifrost.GetReturns(desiredLRP)
+			})
+
+			It("should return a 200 HTTP status code", func() {
+				Expect(response.StatusCode).To(Equal(http.StatusOK))
+			})
+
+			It("should return the DesiredLRP in the response body", func() {
+				var getLRPResponse models.DesiredLRPResponse
+				err := json.NewDecoder(response.Body).Decode(&getLRPResponse)
+				Expect(err).ToNot(HaveOccurred())
+
+				actualLRP := getLRPResponse.DesiredLrp
+				Expect(actualLRP.ProcessGuid).To(Equal("guid_1234"))
+				Expect(actualLRP.Instances).To(Equal(int32(5)))
+			})
+
+		})
+
+		Context("when the app does not exist", func() {
+			BeforeEach(func() {
+				bifrost.GetReturns(nil)
+			})
+
+			It("should return a 404 HTTP status code", func() {
+				Expect(response.StatusCode).To(Equal(http.StatusNotFound))
+			})
+
+		})
+
+	})
 })
 
 func createSchedulingInfos() []*models.DesiredLRPSchedulingInfo {

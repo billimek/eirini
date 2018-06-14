@@ -48,6 +48,18 @@ type FakeBifrost struct {
 	updateReturnsOnCall map[int]struct {
 		result1 error
 	}
+	GetStub        func(ctx context.Context, guid string) *models.DesiredLRP
+	getMutex       sync.RWMutex
+	getArgsForCall []struct {
+		ctx  context.Context
+		guid string
+	}
+	getReturns struct {
+		result1 *models.DesiredLRP
+	}
+	getReturnsOnCall map[int]struct {
+		result1 *models.DesiredLRP
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -206,6 +218,55 @@ func (fake *FakeBifrost) UpdateReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeBifrost) Get(ctx context.Context, guid string) *models.DesiredLRP {
+	fake.getMutex.Lock()
+	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
+	fake.getArgsForCall = append(fake.getArgsForCall, struct {
+		ctx  context.Context
+		guid string
+	}{ctx, guid})
+	fake.recordInvocation("Get", []interface{}{ctx, guid})
+	fake.getMutex.Unlock()
+	if fake.GetStub != nil {
+		return fake.GetStub(ctx, guid)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.getReturns.result1
+}
+
+func (fake *FakeBifrost) GetCallCount() int {
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
+	return len(fake.getArgsForCall)
+}
+
+func (fake *FakeBifrost) GetArgsForCall(i int) (context.Context, string) {
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
+	return fake.getArgsForCall[i].ctx, fake.getArgsForCall[i].guid
+}
+
+func (fake *FakeBifrost) GetReturns(result1 *models.DesiredLRP) {
+	fake.GetStub = nil
+	fake.getReturns = struct {
+		result1 *models.DesiredLRP
+	}{result1}
+}
+
+func (fake *FakeBifrost) GetReturnsOnCall(i int, result1 *models.DesiredLRP) {
+	fake.GetStub = nil
+	if fake.getReturnsOnCall == nil {
+		fake.getReturnsOnCall = make(map[int]struct {
+			result1 *models.DesiredLRP
+		})
+	}
+	fake.getReturnsOnCall[i] = struct {
+		result1 *models.DesiredLRP
+	}{result1}
+}
+
 func (fake *FakeBifrost) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -215,6 +276,8 @@ func (fake *FakeBifrost) Invocations() map[string][][]interface{} {
 	defer fake.listMutex.RUnlock()
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

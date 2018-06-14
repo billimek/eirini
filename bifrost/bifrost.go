@@ -84,3 +84,18 @@ func (b *Bifrost) Update(ctx context.Context, update models.UpdateDesiredLRPRequ
 
 	return b.Desirer.Update(ctx, *lrp)
 }
+
+func (b *Bifrost) Get(ctx context.Context, guid string) *models.DesiredLRP {
+	lrp, err := b.Desirer.Get(ctx, guid)
+	if err != nil {
+		b.Logger.Error("failed-to-get-deployment", err, lager.Data{"process-guid": guid})
+		return nil
+	}
+
+	desiredLRP := &models.DesiredLRP{
+		ProcessGuid: lrp.Name,
+		Instances:   int32(lrp.TargetInstances),
+	}
+
+	return desiredLRP
+}
