@@ -56,7 +56,7 @@ var _ = Describe("Convert CC DesiredApp into an opi LRP", func() {
 			Environment: []*models.EnvironmentVariable{
 				&models.EnvironmentVariable{
 					Name:  "VCAP_APPLICATION",
-					Value: `{"name":"bumblebee", "space_name":"transformers", "application_id":"b194809b-88c0-49af-b8aa-69da097fc360", "version": "something-something-uuid"}`,
+					Value: `{"application_name":"bumblebee", "space_name":"transformers", "application_id":"b194809b-88c0-49af-b8aa-69da097fc360", "version": "something-something-uuid", "application_uris":["bumblebee.example.com", "transformers.example.com"]}`,
 				},
 			},
 		}, fakeServer.URL(), regIP, cfClient, client, logger)
@@ -67,8 +67,7 @@ var _ = Describe("Convert CC DesiredApp into an opi LRP", func() {
 	})
 
 	It("stores the VCAP env variable as metadata", func() {
-		Expect(lrp.Metadata["name"]).To(Equal("bumblebee"))
-		Expect(lrp.Metadata["space_name"]).To(Equal("transformers"))
+		Expect(lrp.Metadata["application_name"]).To(Equal("bumblebee"))
 		Expect(lrp.Metadata["application_id"]).To(Equal("b194809b-88c0-49af-b8aa-69da097fc360"))
 		Expect(lrp.Metadata["version"]).To(Equal("something-something-uuid"))
 	})

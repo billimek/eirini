@@ -9,6 +9,7 @@ import (
 
 	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/eirini"
+	"code.cloudfoundry.org/eirini/cf"
 	"code.cloudfoundry.org/eirini/opi"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
@@ -22,37 +23,41 @@ func Convert(
 	client *http.Client,
 	log lager.Logger,
 ) opi.LRP {
+	envMap := envVarsToMap(msg.Environment)
+	vcap := parseVcapApplication(envMap["VCAP_APPLICATION"])
+
 	if msg.DockerImageUrl == "" {
-		msg.DockerImageUrl = dropletToImageURI(msg, cfClient, client, registryUrl, registryIP, log)
+		msg.DockerImageUrl = dropletToImageURI(msg, vcap, cfClient, client, registryUrl, registryIP, log)
 	}
 
-	envMap := envVarsToMap(msg.Environment)
-	vcap := parseVcapApplication(envMap)
-
-	metadata := map[string]string{}
-	metadata["process_guid"] = msg.ProcessGuid
-	metadata = merge(metadata, vcap)
+	uris, err := json.Marshal(vcap.AppUris)
+	if err != nil {
+		log.Error("failed-to-marshal-vcap-app-uris", err, lager.Data{"app-guid": vcap.AppId})
+		uris = []byte{}
+	}
 
 	return opi.LRP{
-		Name:            vcap["application_id"],
+		Name:            vcap.AppId,
 		Image:           msg.DockerImageUrl,
 		TargetInstances: msg.NumInstances,
 		Command: []string{
 			msg.StartCommand,
 		},
-		Env:      envMap,
-		Metadata: metadata,
+		Env: envMap,
+		Metadata: map[string]string{
+			cf.VcapAppName: vcap.AppName,
+			cf.VcapAppId:   vcap.AppId,
+			cf.VcapVersion: vcap.Version,
+			cf.VcapAppUris: string(uris),
+			cf.ProcessGuid: msg.ProcessGuid,
+		},
 	}
 }
 
-func parseVcapApplication(env map[string]string) map[string]string {
-	metadata := map[string]string{}
-	if vcap, ok := env["VCAP_APPLICATION"]; ok {
-		if err := json.Unmarshal([]byte(vcap), &metadata); err != nil {
-			panic(err)
-		}
-	}
-	return metadata
+func parseVcapApplication(vcap string) VcapApp {
+	var vcapApp VcapApp
+	json.Unmarshal([]byte(vcap), &vcapApp)
+	return vcapApp
 }
 
 func envVarsToMap(envs []*models.EnvironmentVariable) map[string]string {
@@ -63,44 +68,22 @@ func envVarsToMap(envs []*models.EnvironmentVariable) map[string]string {
 	return envMap
 }
 
-func merge(maps ...map[string]string) map[string]string {
-	result := make(map[string]string)
-	for _, m := range maps {
-		for k, v := range m {
-			result[k] = v
-		}
-	}
-	return result
-}
-
 func dropletToImageURI(
 	msg cc_messages.DesireAppRequestFromCC,
+	vcap VcapApp,
 	cfClient eirini.CfClient,
 	client *http.Client,
 	registryUrl string,
 	registryIP string,
 	log lager.Logger,
 ) string {
-
-	// we can use the map now instead of appInfo
-	var appInfo eirini.AppInfo
-	for _, v := range msg.Environment {
-		if v.Name == "VCAP_APPLICATION" {
-			err := json.Unmarshal([]byte(v.Value), &appInfo)
-			if err != nil {
-				log.Error("failed-to-decode-environment-json-from-cc_message", err)
-				panic(err)
-			}
-		}
-	}
-
-	dropletBytes, err := cfClient.GetDropletByAppGuid(appInfo.AppGuid)
+	dropletBytes, err := cfClient.GetDropletByAppGuid(vcap.AppId)
 	if err != nil {
-		log.Error("failed-to-get-droplet-from-cloud-controller", err, lager.Data{"app-guid": appInfo.AppGuid})
+		log.Error("failed-to-get-droplet-from-cloud-controller", err, lager.Data{"app-guid": vcap.AppId})
 		panic(err)
 	}
 
-	stageRequest(client, registryUrl, appInfo, msg.DropletHash, dropletBytes, log)
+	stageRequest(client, registryUrl, vcap, msg.DropletHash, dropletBytes, log)
 
 	return fmt.Sprintf("%s/cloudfoundry/app-name:%s", registryIP, msg.DropletHash)
 }
@@ -108,12 +91,12 @@ func dropletToImageURI(
 func stageRequest(
 	client *http.Client,
 	registryUrl string,
-	appInfo eirini.AppInfo,
+	vcap VcapApp,
 	dropletHash string,
 	dropletBytes []byte,
 	log lager.Logger,
 ) string {
-	registryStageUri := registryStageUri(registryUrl, appInfo.SpaceName, appInfo.AppName, dropletHash)
+	registryStageUri := registryStageUri(registryUrl, vcap.SpaceName, vcap.AppName, dropletHash)
 
 	log.Info("sending-request-to-registry", lager.Data{"request": registryStageUri})
 
@@ -141,12 +124,4 @@ func stageRequest(
 
 	return string(digest)
 
-}
-
-func dropletDownloadUri(baseUrl string, appGuid string) string {
-	return fmt.Sprintf("%s/v2/apps/%s/droplet/download", baseUrl, appGuid)
-}
-
-func registryStageUri(baseUrl string, space string, appname string, guid string) string {
-	return fmt.Sprintf("%s/v2/%s/%s/blobs/?guid=%s", baseUrl, space, appname, guid)
 }

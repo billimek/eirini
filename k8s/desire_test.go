@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/eirini"
+	"code.cloudfoundry.org/eirini/cf"
 	"code.cloudfoundry.org/eirini/k8s"
 	"code.cloudfoundry.org/eirini/k8s/k8sfakes"
 	"code.cloudfoundry.org/eirini/opi"
@@ -82,10 +83,10 @@ var _ = Describe("Desiring some LRPs", func() {
 		return fmt.Sprintf("[%s]", strings.Join(quotedUris, ","))
 	}
 
-	envFor := func(appName string, uris []string) map[string]string {
+	metaFor := func(uris []string) map[string]string {
 		jsonUris := asJsonArray(uris)
 		return map[string]string{
-			"VCAP_APPLICATION": fmt.Sprintf("{ \"application_name\": \"%s\", \"application_uris\": %s }", appName, jsonUris),
+			cf.VcapAppUris: fmt.Sprintf("%s", jsonUris),
 		}
 	}
 
@@ -135,8 +136,8 @@ var _ = Describe("Desiring some LRPs", func() {
 		}
 
 		lrps = []opi.LRP{
-			{Name: "app0", Image: "busybox", TargetInstances: 1, Command: []string{""}, Env: envFor(vcapAppNames[0], lrpUris[0])},
-			{Name: "app1", Image: "busybox", TargetInstances: 3, Command: []string{""}, Env: envFor(vcapAppNames[1], lrpUris[1])},
+			{Name: "app0", Image: "busybox", TargetInstances: 1, Command: []string{""}, Metadata: metaFor(lrpUris[0])},
+			{Name: "app1", Image: "busybox", TargetInstances: 3, Command: []string{""}, Metadata: metaFor(lrpUris[1])},
 		}
 
 		ingressManager = new(k8sfakes.FakeIngressManager)
@@ -162,11 +163,10 @@ var _ = Describe("Desiring some LRPs", func() {
 		}
 
 		verifyUpdateIngressArgsForCall := func(i int) {
-			actualNamespace, actualLrp, actualVcapApp := ingressManager.UpdateIngressArgsForCall(i)
+			actualNamespace, actualLrp := ingressManager.UpdateIngressArgsForCall(i)
 
 			Expect(actualNamespace).To(Equal(namespace))
 			Expect(actualLrp).To(Equal(lrps[i]))
-			Expect(actualVcapApp.AppName).To(Equal(vcapAppNames[i]))
 		}
 
 		Context("When it succeeds", func() {
