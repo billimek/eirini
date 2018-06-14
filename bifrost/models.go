@@ -10,6 +10,14 @@ import (
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 )
 
+type VcapApp struct {
+	AppName   string   `json:"application_name"`
+	AppId     string   `json:"application_id"`
+	Version   string   `json:"version"`
+	AppUris   []string `json:"application_uris"`
+	SpaceName string   `json:"space_name"`
+}
+
 type Converter interface {
 	Convert(cc cc_messages.DesireAppRequestFromCC, registryUrl string, registryIP string, cfClient eirini.CfClient, client *http.Client, log lager.Logger) opi.LRP
 }

@@ -7,15 +7,14 @@ import (
 
 	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/runtimeschema/cc_messages"
 )
 
 type FakeBifrost struct {
-	TransferStub        func(ctx context.Context, ccMessages []cc_messages.DesireAppRequestFromCC) error
+	TransferStub        func(ctx context.Context, ccMessages eirini.DesireLRPRequest) error
 	transferMutex       sync.RWMutex
 	transferArgsForCall []struct {
 		ctx        context.Context
-		ccMessages []cc_messages.DesireAppRequestFromCC
+		ccMessages eirini.DesireLRPRequest
 	}
 	transferReturns struct {
 		result1 error
@@ -36,23 +35,42 @@ type FakeBifrost struct {
 		result1 []*models.DesiredLRPSchedulingInfo
 		result2 error
 	}
+	UpdateStub        func(ctx context.Context, update models.UpdateDesiredLRPRequest) error
+	updateMutex       sync.RWMutex
+	updateArgsForCall []struct {
+		ctx    context.Context
+		update models.UpdateDesiredLRPRequest
+	}
+	updateReturns struct {
+		result1 error
+	}
+	updateReturnsOnCall map[int]struct {
+		result1 error
+	}
+	GetStub        func(ctx context.Context, guid string) *models.DesiredLRP
+	getMutex       sync.RWMutex
+	getArgsForCall []struct {
+		ctx  context.Context
+		guid string
+	}
+	getReturns struct {
+		result1 *models.DesiredLRP
+	}
+	getReturnsOnCall map[int]struct {
+		result1 *models.DesiredLRP
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeBifrost) Transfer(ctx context.Context, ccMessages []cc_messages.DesireAppRequestFromCC) error {
-	var ccMessagesCopy []cc_messages.DesireAppRequestFromCC
-	if ccMessages != nil {
-		ccMessagesCopy = make([]cc_messages.DesireAppRequestFromCC, len(ccMessages))
-		copy(ccMessagesCopy, ccMessages)
-	}
+func (fake *FakeBifrost) Transfer(ctx context.Context, ccMessages eirini.DesireLRPRequest) error {
 	fake.transferMutex.Lock()
 	ret, specificReturn := fake.transferReturnsOnCall[len(fake.transferArgsForCall)]
 	fake.transferArgsForCall = append(fake.transferArgsForCall, struct {
 		ctx        context.Context
-		ccMessages []cc_messages.DesireAppRequestFromCC
-	}{ctx, ccMessagesCopy})
-	fake.recordInvocation("Transfer", []interface{}{ctx, ccMessagesCopy})
+		ccMessages eirini.DesireLRPRequest
+	}{ctx, ccMessages})
+	fake.recordInvocation("Transfer", []interface{}{ctx, ccMessages})
 	fake.transferMutex.Unlock()
 	if fake.TransferStub != nil {
 		return fake.TransferStub(ctx, ccMessages)
@@ -69,7 +87,7 @@ func (fake *FakeBifrost) TransferCallCount() int {
 	return len(fake.transferArgsForCall)
 }
 
-func (fake *FakeBifrost) TransferArgsForCall(i int) (context.Context, []cc_messages.DesireAppRequestFromCC) {
+func (fake *FakeBifrost) TransferArgsForCall(i int) (context.Context, eirini.DesireLRPRequest) {
 	fake.transferMutex.RLock()
 	defer fake.transferMutex.RUnlock()
 	return fake.transferArgsForCall[i].ctx, fake.transferArgsForCall[i].ccMessages
@@ -145,6 +163,104 @@ func (fake *FakeBifrost) ListReturnsOnCall(i int, result1 []*models.DesiredLRPSc
 	}{result1, result2}
 }
 
+func (fake *FakeBifrost) Update(ctx context.Context, update models.UpdateDesiredLRPRequest) error {
+	fake.updateMutex.Lock()
+	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
+	fake.updateArgsForCall = append(fake.updateArgsForCall, struct {
+		ctx    context.Context
+		update models.UpdateDesiredLRPRequest
+	}{ctx, update})
+	fake.recordInvocation("Update", []interface{}{ctx, update})
+	fake.updateMutex.Unlock()
+	if fake.UpdateStub != nil {
+		return fake.UpdateStub(ctx, update)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.updateReturns.result1
+}
+
+func (fake *FakeBifrost) UpdateCallCount() int {
+	fake.updateMutex.RLock()
+	defer fake.updateMutex.RUnlock()
+	return len(fake.updateArgsForCall)
+}
+
+func (fake *FakeBifrost) UpdateArgsForCall(i int) (context.Context, models.UpdateDesiredLRPRequest) {
+	fake.updateMutex.RLock()
+	defer fake.updateMutex.RUnlock()
+	return fake.updateArgsForCall[i].ctx, fake.updateArgsForCall[i].update
+}
+
+func (fake *FakeBifrost) UpdateReturns(result1 error) {
+	fake.UpdateStub = nil
+	fake.updateReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeBifrost) UpdateReturnsOnCall(i int, result1 error) {
+	fake.UpdateStub = nil
+	if fake.updateReturnsOnCall == nil {
+		fake.updateReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.updateReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeBifrost) Get(ctx context.Context, guid string) *models.DesiredLRP {
+	fake.getMutex.Lock()
+	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
+	fake.getArgsForCall = append(fake.getArgsForCall, struct {
+		ctx  context.Context
+		guid string
+	}{ctx, guid})
+	fake.recordInvocation("Get", []interface{}{ctx, guid})
+	fake.getMutex.Unlock()
+	if fake.GetStub != nil {
+		return fake.GetStub(ctx, guid)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.getReturns.result1
+}
+
+func (fake *FakeBifrost) GetCallCount() int {
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
+	return len(fake.getArgsForCall)
+}
+
+func (fake *FakeBifrost) GetArgsForCall(i int) (context.Context, string) {
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
+	return fake.getArgsForCall[i].ctx, fake.getArgsForCall[i].guid
+}
+
+func (fake *FakeBifrost) GetReturns(result1 *models.DesiredLRP) {
+	fake.GetStub = nil
+	fake.getReturns = struct {
+		result1 *models.DesiredLRP
+	}{result1}
+}
+
+func (fake *FakeBifrost) GetReturnsOnCall(i int, result1 *models.DesiredLRP) {
+	fake.GetStub = nil
+	if fake.getReturnsOnCall == nil {
+		fake.getReturnsOnCall = make(map[int]struct {
+			result1 *models.DesiredLRP
+		})
+	}
+	fake.getReturnsOnCall[i] = struct {
+		result1 *models.DesiredLRP
+	}{result1}
+}
+
 func (fake *FakeBifrost) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -152,6 +268,10 @@ func (fake *FakeBifrost) Invocations() map[string][][]interface{} {
 	defer fake.transferMutex.RUnlock()
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
+	fake.updateMutex.RLock()
+	defer fake.updateMutex.RUnlock()
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

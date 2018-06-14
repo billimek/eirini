@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/bifrost"
 	"code.cloudfoundry.org/eirini/opi"
@@ -124,5 +125,163 @@ var _ = Describe("Bifrost", func() {
 				Expect(err.Error()).Should(ContainSubstring("failed to list desired LRPs"))
 			})
 		})
+	})
+
+	Context("Update an app", func() {
+
+		var (
+			bfrst         bifrost.Bifrost
+			opiClient     *opifakes.FakeDesirer
+			lager         lager.Logger
+			updateRequest models.UpdateDesiredLRPRequest
+			err           error
+		)
+
+		BeforeEach(func() {
+			updateRequest = models.UpdateDesiredLRPRequest{
+				ProcessGuid: "app_name",
+			}
+			opiClient = new(opifakes.FakeDesirer)
+
+			lager = lagertest.NewTestLogger("bifrost-update-test")
+		})
+
+		JustBeforeEach(func() {
+			bfrst = bifrost.Bifrost{
+				Desirer: opiClient,
+				Logger:  lager,
+			}
+
+			err = bfrst.Update(context.Background(), updateRequest)
+		})
+
+		Context("when the app exists", func() {
+
+			BeforeEach(func() {
+				lrp := opi.LRP{
+					Name:            "app_name",
+					TargetInstances: 2,
+				}
+				opiClient.GetReturns(&lrp, nil)
+			})
+
+			Context("with instance count modified", func() {
+
+				BeforeEach(func() {
+					updatedInstances := int32(5)
+					updateRequest.Update = &models.DesiredLRPUpdate{Instances: &updatedInstances}
+					opiClient.UpdateReturns(nil)
+				})
+
+				It("should get the existing LRP", func() {
+					Expect(opiClient.GetCallCount()).To(Equal(1))
+					_, appName := opiClient.GetArgsForCall(0)
+					Expect(appName).To(Equal("app_name"))
+				})
+
+				It("should submit the updated LRP", func() {
+					Expect(opiClient.UpdateCallCount()).To(Equal(1))
+					_, lrp := opiClient.UpdateArgsForCall(0)
+					Expect(lrp.Name).To(Equal("app_name"))
+					Expect(lrp.TargetInstances).To(Equal(int(*updateRequest.Update.Instances)))
+				})
+
+				It("should not return an error", func() {
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				Context("when the update fails", func() {
+					BeforeEach(func() {
+						opiClient.UpdateReturns(errors.New("failed to update app"))
+					})
+
+					It("should propagate the error", func() {
+						Expect(err).To(HaveOccurred())
+					})
+				})
+			})
+		})
+
+		Context("when the app does not exist", func() {
+
+			BeforeEach(func() {
+				opiClient.GetReturns(nil, errors.New("app does not exist"))
+			})
+
+			It("should try to get the LRP", func() {
+				Expect(opiClient.GetCallCount()).To(Equal(1))
+				_, appName := opiClient.GetArgsForCall(0)
+				Expect(appName).To(Equal("app_name"))
+
+			})
+
+			It("should not submit anything to be updated", func() {
+				Expect(opiClient.UpdateCallCount()).To(Equal(0))
+			})
+
+			It("should propagate the error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Context("get an App", func() {
+		var (
+			bfrst      bifrost.Bifrost
+			opiClient  *opifakes.FakeDesirer
+			lager      lager.Logger
+			desiredLRP *models.DesiredLRP
+			lrp        *opi.LRP
+		)
+
+		BeforeEach(func() {
+			opiClient = new(opifakes.FakeDesirer)
+
+			lager = lagertest.NewTestLogger("bifrost-update-test")
+		})
+
+		JustBeforeEach(func() {
+			bfrst = bifrost.Bifrost{
+				Desirer: opiClient,
+				Logger:  lager,
+			}
+
+			desiredLRP = bfrst.Get(context.Background(), "app_name")
+		})
+
+		Context("when the app exists", func() {
+			BeforeEach(func() {
+				lrp = &opi.LRP{
+					Name:            "app_name",
+					TargetInstances: 5,
+				}
+
+				opiClient.GetReturns(lrp, nil)
+			})
+
+			It("should use the desirer to get the lrp", func() {
+				Expect(opiClient.GetCallCount()).To(Equal(1))
+				_, guid := opiClient.GetArgsForCall(0)
+				Expect(guid).To(Equal("app_name"))
+			})
+
+			It("should return a DesiredLRP", func() {
+				Expect(desiredLRP).ToNot(BeNil())
+				Expect(desiredLRP.ProcessGuid).To(Equal("app_name"))
+				Expect(desiredLRP.Instances).To(Equal(int32(5)))
+			})
+		})
+
+		Context("when the app does not exist", func() {
+			BeforeEach(func() {
+				opiClient.GetReturns(nil, errors.New("Failed to get LRP"))
+			})
+
+			It("should return an error", func() {
+				Expect(opiClient.GetCallCount()).To(Equal(1))
+				Expect(desiredLRP).To(BeNil())
+			})
+		})
+
 	})
 })

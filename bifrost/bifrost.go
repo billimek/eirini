@@ -73,3 +73,30 @@ func toDesiredLRPSchedulingInfo(lrps []opi.LRP) []*models.DesiredLRPSchedulingIn
 	}
 	return infos
 }
+
+func (b *Bifrost) Update(ctx context.Context, update models.UpdateDesiredLRPRequest) error {
+	lrp, err := b.Desirer.Get(ctx, update.ProcessGuid)
+	if err != nil {
+		b.Logger.Error("application-not-found", err, lager.Data{"process-guid": update.ProcessGuid})
+		return err
+	}
+
+	lrp.TargetInstances = int(*update.Update.Instances)
+
+	return b.Desirer.Update(ctx, *lrp)
+}
+
+func (b *Bifrost) Get(ctx context.Context, guid string) *models.DesiredLRP {
+	lrp, err := b.Desirer.Get(ctx, guid)
+	if err != nil {
+		b.Logger.Error("failed-to-get-deployment", err, lager.Data{"process-guid": guid})
+		return nil
+	}
+
+	desiredLRP := &models.DesiredLRP{
+		ProcessGuid: lrp.Name,
+		Instances:   int32(lrp.TargetInstances),
+	}
+
+	return desiredLRP
+}
