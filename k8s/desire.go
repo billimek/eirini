@@ -151,9 +151,7 @@ func toDeployment(lrp opi.LRP) *v1beta1.Deployment {
 		"name":   lrp.Name,
 	}
 
-	deployment.Annotations = map[string]string{
-		"version": lrp.Metadata[cf.VcapVersion],
-	}
+	deployment.Annotations = lrp.Metadata
 
 	return deployment
 }
