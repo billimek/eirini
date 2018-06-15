@@ -83,7 +83,7 @@ func findAll(lrps []opi.LRP, ids []string) bool {
 	for _, a := range ids {
 		exists = false
 		for _, l := range lrps {
-			if l.Name == a {
+			if l.Metadata["process_guid"] == a {
 				exists = true
 			}
 		}

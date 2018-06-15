@@ -37,7 +37,11 @@ func (m *deploymentManager) ListLRPs(namespace string) ([]opi.LRP, error) {
 func toLRPs(deployments *v1beta1.DeploymentList) []opi.LRP {
 	lrps := []opi.LRP{}
 	for _, d := range deployments.Items {
-		lrp := opi.LRP{Name: d.Annotations[cf.ProcessGuid]}
+		lrp := opi.LRP{
+			Metadata: map[string]string{
+				cf.ProcessGuid: d.Annotations[cf.ProcessGuid],
+			},
+		}
 		lrps = append(lrps, lrp)
 	}
 	return lrps
