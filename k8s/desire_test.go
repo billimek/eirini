@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/cf"
 	"code.cloudfoundry.org/eirini/k8s"
 	"code.cloudfoundry.org/eirini/k8s/k8sfakes"
+	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

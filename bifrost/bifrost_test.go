@@ -83,9 +83,9 @@ var _ = Describe("Bifrost", func() {
 
 			BeforeEach(func() {
 				lrps = []opi.LRP{
-					opi.LRP{Name: "1234", Metadata: map[string]string{"version": "abcd"}},
-					opi.LRP{Name: "5678", Metadata: map[string]string{"version": "efgh"}},
-					opi.LRP{Name: "0213", Metadata: map[string]string{"version": "ijkl"}},
+					opi.LRP{Name: "1234", Metadata: map[string]string{"process_guid": "abcd"}},
+					opi.LRP{Name: "5678", Metadata: map[string]string{"process_guid": "efgh"}},
+					opi.LRP{Name: "0213", Metadata: map[string]string{"process_guid": "ijkl"}},
 				}
 			})
 
@@ -93,9 +93,9 @@ var _ = Describe("Bifrost", func() {
 				desiredLRPSchedulingInfos, err := bfrst.List(context.Background())
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(desiredLRPSchedulingInfos[0].ProcessGuid).To(Equal("1234-abcd"))
-				Expect(desiredLRPSchedulingInfos[1].ProcessGuid).To(Equal("5678-efgh"))
-				Expect(desiredLRPSchedulingInfos[2].ProcessGuid).To(Equal("0213-ijkl"))
+				Expect(desiredLRPSchedulingInfos[0].ProcessGuid).To(Equal("abcd"))
+				Expect(desiredLRPSchedulingInfos[1].ProcessGuid).To(Equal("efgh"))
+				Expect(desiredLRPSchedulingInfos[2].ProcessGuid).To(Equal("ijkl"))
 			})
 		})
 

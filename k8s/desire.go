@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/cf"
 	"code.cloudfoundry.org/eirini/launcher"
+	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 	"k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
