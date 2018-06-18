@@ -9,17 +9,16 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/julienschmidt/httprouter"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"code.cloudfoundry.org/bbs/models"
+	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/eirinifakes"
 	. "code.cloudfoundry.org/eirini/handler"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
-	"code.cloudfoundry.org/runtimeschema/cc_messages"
+	"github.com/gogo/protobuf/jsonpb"
+	"github.com/julienschmidt/httprouter"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("AppHandler", func() {
@@ -43,7 +42,7 @@ var _ = Describe("AppHandler", func() {
 
 		BeforeEach(func() {
 			path = "/apps/myguid"
-			body = `{"process_guid" : "myguid", "start_command": "./start", "environment": [ { "name": "env_var", "value": "env_var_value" } ], "num_instances": 5}`
+			body = `{"process_guid" : "myguid", "start_command": "./start", "environment": { "env_var": "env_var_value" }, "instances": 5, "last_updated":"1529073295.9"}`
 		})
 
 		JustBeforeEach(func() {
@@ -57,16 +56,17 @@ var _ = Describe("AppHandler", func() {
 		})
 
 		It("should call the bifrost with the desired LRPs request from Cloud Controller", func() {
-			expectedRequest := cc_messages.DesireAppRequestFromCC{
+			expectedRequest := eirini.DesireLRPRequest{
 				ProcessGuid:  "myguid",
 				StartCommand: "./start",
-				Environment:  []*models.EnvironmentVariable{&models.EnvironmentVariable{Name: "env_var", Value: "env_var_value"}},
+				Environment:  map[string]string{"env_var": "env_var_value"},
 				NumInstances: 5,
+				LastUpdated:  "1529073295.9",
 			}
 
 			Expect(bifrost.TransferCallCount()).To(Equal(1))
-			_, messages := bifrost.TransferArgsForCall(0)
-			Expect(messages[0]).To(Equal(expectedRequest))
+			_, request := bifrost.TransferArgsForCall(0)
+			Expect(request).To(Equal(expectedRequest))
 		})
 
 		Context("When the endpoint process guid does not match the desired app process guid", func() {

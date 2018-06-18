@@ -7,15 +7,14 @@ import (
 
 	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/runtimeschema/cc_messages"
 )
 
 type FakeBifrost struct {
-	TransferStub        func(ctx context.Context, ccMessages []cc_messages.DesireAppRequestFromCC) error
+	TransferStub        func(ctx context.Context, ccMessages eirini.DesireLRPRequest) error
 	transferMutex       sync.RWMutex
 	transferArgsForCall []struct {
 		ctx        context.Context
-		ccMessages []cc_messages.DesireAppRequestFromCC
+		ccMessages eirini.DesireLRPRequest
 	}
 	transferReturns struct {
 		result1 error
@@ -64,19 +63,14 @@ type FakeBifrost struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeBifrost) Transfer(ctx context.Context, ccMessages []cc_messages.DesireAppRequestFromCC) error {
-	var ccMessagesCopy []cc_messages.DesireAppRequestFromCC
-	if ccMessages != nil {
-		ccMessagesCopy = make([]cc_messages.DesireAppRequestFromCC, len(ccMessages))
-		copy(ccMessagesCopy, ccMessages)
-	}
+func (fake *FakeBifrost) Transfer(ctx context.Context, ccMessages eirini.DesireLRPRequest) error {
 	fake.transferMutex.Lock()
 	ret, specificReturn := fake.transferReturnsOnCall[len(fake.transferArgsForCall)]
 	fake.transferArgsForCall = append(fake.transferArgsForCall, struct {
 		ctx        context.Context
-		ccMessages []cc_messages.DesireAppRequestFromCC
-	}{ctx, ccMessagesCopy})
-	fake.recordInvocation("Transfer", []interface{}{ctx, ccMessagesCopy})
+		ccMessages eirini.DesireLRPRequest
+	}{ctx, ccMessages})
+	fake.recordInvocation("Transfer", []interface{}{ctx, ccMessages})
 	fake.transferMutex.Unlock()
 	if fake.TransferStub != nil {
 		return fake.TransferStub(ctx, ccMessages)
@@ -93,7 +87,7 @@ func (fake *FakeBifrost) TransferCallCount() int {
 	return len(fake.transferArgsForCall)
 }
 
-func (fake *FakeBifrost) TransferArgsForCall(i int) (context.Context, []cc_messages.DesireAppRequestFromCC) {
+func (fake *FakeBifrost) TransferArgsForCall(i int) (context.Context, eirini.DesireLRPRequest) {
 	fake.transferMutex.RLock()
 	defer fake.transferMutex.RUnlock()
 	return fake.transferArgsForCall[i].ctx, fake.transferArgsForCall[i].ccMessages

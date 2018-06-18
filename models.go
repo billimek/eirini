@@ -76,7 +76,7 @@ type Extractor interface {
 
 //go:generate counterfeiter . Bifrost
 type Bifrost interface {
-	Transfer(ctx context.Context, ccMessages []cc_messages.DesireAppRequestFromCC) error
+	Transfer(ctx context.Context, ccMessages DesireLRPRequest) error
 	List(ctx context.Context) ([]*models.DesiredLRPSchedulingInfo, error)
 	Update(ctx context.Context, update models.UpdateDesiredLRPRequest) error
 	Get(ctx context.Context, guid string) *models.DesiredLRP
@@ -85,4 +85,12 @@ type Bifrost interface {
 func GetInternalServiceName(appName string) string {
 	//Prefix service as the appName could start with numerical characters, which is not allowed
 	return fmt.Sprintf("cf-%s", appName)
+}
+
+type DesireLRPRequest struct {
+	ProcessGuid  string            `json:"process_guid"`
+	StartCommand string            `json:"start_command"`
+	Environment  map[string]string `json:"environment"`
+	NumInstances int               `json:"instances"`
+	LastUpdated  string            `json:"last_updated"`
 }
