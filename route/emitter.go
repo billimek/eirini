@@ -23,22 +23,34 @@ func (p *NATSPublisher) Publish(subj string, data []byte) error {
 
 type RouteEmitter struct {
 	Publisher Publisher
+	Scheduler TaskScheduler
 	Work      <-chan []RegistryMessage
 }
 
-func NewRouteEmitter(nats *nats.Conn, workChannel chan []RegistryMessage, emitInterval int) *RouteEmitter {
-	publisher := &NATSPublisher{NatsClient: nats}
+func NewRouteEmitter(nats *nats.Conn, workChannel chan []RegistryMessage) *RouteEmitter {
 	return &RouteEmitter{
-		Publisher: publisher,
+		Publisher: &NATSPublisher{NatsClient: nats},
+		Scheduler: &SimpleLoopScheduler{},
+		Work:      workChannel,
+	}
+}
+
+func NewRouteEmitter(nats *nats.Conn, workChannel chan []RegistryMessage, scheduler TaskScheduler) *RouteEmitter {
+	return &RouteEmitter{
+		Publisher: &NATSPublisher{NatsClient: nats},
+		Scheduler: scheduler,
 		Work:      workChannel,
 	}
 }
 
 func (r *RouteEmitter) Start() {
-	select {
-	case batch := <-r.Work:
-		go r.emit(batch)
-	}
+	r.Scheduler.Schedule(func() error {
+		select {
+		case batch := <-r.Work:
+			r.emit(batch)
+		}
+		return nil
+	})
 }
 
 func (r *RouteEmitter) emit(batch []RegistryMessage) {
