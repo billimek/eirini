@@ -17,37 +17,84 @@ import (
 )
 
 var _ = Describe("Bifrost", func() {
-	FContext("Transfer", func() {
+	Context("Transfer", func() {
 		var (
-			err     error
-			bfrst   eirini.Bifrost
-			request eirini.DesireLRPRequest
+			err       error
+			bfrst     eirini.Bifrost
+			request   eirini.DesireLRPRequest
+			converter *bifrostfakes.FakeConverter
+			desirer   *opifakes.FakeDesirer
 		)
 
 		BeforeEach(func() {
-
-			cnvrtr := new(bifrostfakes.FakeConverter)
-			dsrr := new(opifakes.FakeDesirer)
-
-			cnvrtr.convertMessageReturns(desiredLRP)
+			converter = new(bifrostfakes.FakeConverter)
+			desirer = new(opifakes.FakeDesirer)
 		})
 
 		JustBeforeEach(func() {
 			bfrst = &bifrost.Bifrost{
-				Converter: cnvrtr,
-				Desirer:   dsrr,
+				Converter: converter,
+				Desirer:   desirer,
+				Logger:    lagertest.NewTestLogger("bifrost"),
 			}
 			err = bfrst.Transfer(context.Background(), request)
 		})
 
-		Context("when lrp is desired succesfully", func() {
+		Context("When lrp is transferred succesfully", func() {
+			var lrp opi.LRP
 
-			BefureEach(func() {
-
+			BeforeEach(func() {
+				lrp = opi.LRP{
+					Name:  "lrp_name",
+					Image: "docker.png",
+				}
+				converter.ConvertReturns(lrp, nil)
 			})
 
 			It("should not return an error", func() {
 				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should use Converter", func() {
+				Expect(converter.ConvertCallCount()).To(Equal(1))
+				Expect(converter.ConvertArgsForCall(0)).To(Equal(request))
+			})
+
+			It("should use Desirer with the converted LRP", func() {
+				Expect(desirer.DesireCallCount()).To(Equal(1))
+				_, lrps := desirer.DesireArgsForCall(0)
+				Expect(lrps).To(Equal([]opi.LRP{lrp}))
+			})
+		})
+
+		Context("When lrp transfer fails", func() {
+			Context("when Converter fails", func() {
+				BeforeEach(func() {
+					converter.ConvertReturns(opi.LRP{}, errors.New("failed-to-convert"))
+				})
+
+				It("shoud return an error", func() {
+					Expect(err).To(HaveOccurred())
+				})
+
+				It("should use Converter", func() {
+					Expect(converter.ConvertCallCount()).To(Equal(1))
+					Expect(converter.ConvertArgsForCall(0)).To(Equal(request))
+				})
+
+				It("should not use Desirer", func() {
+					Expect(desirer.DesireCallCount()).To(Equal(0))
+				})
+			})
+
+			Context("When Desirer fails", func() {
+				BeforeEach(func() {
+					desirer.DesireReturns(errors.New("failed-to-desire"))
+				})
+
+				It("shoud return an error", func() {
+					Expect(err).To(HaveOccurred())
+				})
 			})
 		})
 

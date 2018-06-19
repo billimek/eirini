@@ -2,7 +2,6 @@ package bifrost
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/pkg/errors"
 
@@ -14,31 +13,18 @@ import (
 )
 
 type Bifrost struct {
-	Converter   Converter
-	Desirer     opi.Desirer
-	CfClient    eirini.CfClient
-	Client      *http.Client
-	Logger      lager.Logger
-	RegistryUrl string
-	RegistryIP  string
+	Converter Converter
+	Desirer   opi.Desirer
+	Logger    lager.Logger
 }
 
 func (c *Bifrost) Transfer(ctx context.Context, request eirini.DesireLRPRequest) error {
-	desiredLRP := c.convertMessage(request)
+	desiredLRP, err := c.Converter.Convert(request)
+	if err != nil {
+		c.Logger.Error("failed-to-convert-request", err, lager.Data{"desire-lrp-request": request})
+		return err
+	}
 	return c.Desirer.Desire(ctx, []opi.LRP{desiredLRP})
-}
-
-// Convert could panic. To be able to skip this message and continue with the next,
-// the panic needs to be handled for each message.
-func (c *Bifrost) convertMessage(request eirini.DesireLRPRequest) opi.LRP {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				c.Logger.Error("failed-to-convert-message", err)
-			}
-		}
-	}()
-	return c.Converter.Convert(request, c.RegistryUrl, c.RegistryIP, c.CfClient, c.Client, c.Logger)
 }
 
 func (b *Bifrost) List(ctx context.Context) ([]*models.DesiredLRPSchedulingInfo, error) {

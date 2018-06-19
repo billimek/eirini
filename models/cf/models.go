@@ -7,6 +7,7 @@ const (
 	VcapAppId     = "application_id"
 	VcapSpaceName = "space_name"
 
+	LastUpdated = "last_updated"
 	ProcessGuid = "process_guid"
 )
 

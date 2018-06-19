@@ -2,56 +2,46 @@
 package bifrostfakes
 
 import (
-	"net/http"
 	"sync"
 
 	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/bifrost"
 	"code.cloudfoundry.org/eirini/opi"
-	"code.cloudfoundry.org/lager"
 )
 
 type FakeConverter struct {
-	ConvertStub        func(request eirini.DesireLRPRequest, registryUrl string, registryIP string, cfClient eirini.CfClient, client *http.Client, log lager.Logger) opi.LRP
+	ConvertStub        func(request eirini.DesireLRPRequest) (opi.LRP, error)
 	convertMutex       sync.RWMutex
 	convertArgsForCall []struct {
-		request     eirini.DesireLRPRequest
-		registryUrl string
-		registryIP  string
-		cfClient    eirini.CfClient
-		client      *http.Client
-		log         lager.Logger
+		request eirini.DesireLRPRequest
 	}
 	convertReturns struct {
 		result1 opi.LRP
+		result2 error
 	}
 	convertReturnsOnCall map[int]struct {
 		result1 opi.LRP
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeConverter) Convert(request eirini.DesireLRPRequest, registryUrl string, registryIP string, cfClient eirini.CfClient, client *http.Client, log lager.Logger) opi.LRP {
+func (fake *FakeConverter) Convert(request eirini.DesireLRPRequest) (opi.LRP, error) {
 	fake.convertMutex.Lock()
 	ret, specificReturn := fake.convertReturnsOnCall[len(fake.convertArgsForCall)]
 	fake.convertArgsForCall = append(fake.convertArgsForCall, struct {
-		request     eirini.DesireLRPRequest
-		registryUrl string
-		registryIP  string
-		cfClient    eirini.CfClient
-		client      *http.Client
-		log         lager.Logger
-	}{request, registryUrl, registryIP, cfClient, client, log})
-	fake.recordInvocation("Convert", []interface{}{request, registryUrl, registryIP, cfClient, client, log})
+		request eirini.DesireLRPRequest
+	}{request})
+	fake.recordInvocation("Convert", []interface{}{request})
 	fake.convertMutex.Unlock()
 	if fake.ConvertStub != nil {
-		return fake.ConvertStub(request, registryUrl, registryIP, cfClient, client, log)
+		return fake.ConvertStub(request)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fake.convertReturns.result1
+	return fake.convertReturns.result1, fake.convertReturns.result2
 }
 
 func (fake *FakeConverter) ConvertCallCount() int {
@@ -60,29 +50,32 @@ func (fake *FakeConverter) ConvertCallCount() int {
 	return len(fake.convertArgsForCall)
 }
 
-func (fake *FakeConverter) ConvertArgsForCall(i int) (eirini.DesireLRPRequest, string, string, eirini.CfClient, *http.Client, lager.Logger) {
+func (fake *FakeConverter) ConvertArgsForCall(i int) eirini.DesireLRPRequest {
 	fake.convertMutex.RLock()
 	defer fake.convertMutex.RUnlock()
-	return fake.convertArgsForCall[i].request, fake.convertArgsForCall[i].registryUrl, fake.convertArgsForCall[i].registryIP, fake.convertArgsForCall[i].cfClient, fake.convertArgsForCall[i].client, fake.convertArgsForCall[i].log
+	return fake.convertArgsForCall[i].request
 }
 
-func (fake *FakeConverter) ConvertReturns(result1 opi.LRP) {
+func (fake *FakeConverter) ConvertReturns(result1 opi.LRP, result2 error) {
 	fake.ConvertStub = nil
 	fake.convertReturns = struct {
 		result1 opi.LRP
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeConverter) ConvertReturnsOnCall(i int, result1 opi.LRP) {
+func (fake *FakeConverter) ConvertReturnsOnCall(i int, result1 opi.LRP, result2 error) {
 	fake.ConvertStub = nil
 	if fake.convertReturnsOnCall == nil {
 		fake.convertReturnsOnCall = make(map[int]struct {
 			result1 opi.LRP
+			result2 error
 		})
 	}
 	fake.convertReturnsOnCall[i] = struct {
 		result1 opi.LRP
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeConverter) Invocations() map[string][][]interface{} {
