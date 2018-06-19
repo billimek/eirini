@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/bifrost"
 	"code.cloudfoundry.org/eirini/bifrost/bifrostfakes"
+	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 	"code.cloudfoundry.org/eirini/opi/opifakes"
 	"code.cloudfoundry.org/lager"
@@ -117,6 +118,16 @@ var _ = Describe("Bifrost", func() {
 			}
 		})
 
+		createLRP := func(name, processGuid, lastUpdated string) opi.LRP {
+			return opi.LRP{
+				Name: name,
+				Metadata: map[string]string{
+					cf.ProcessGuid: processGuid,
+					cf.LastUpdated: lastUpdated,
+				},
+			}
+		}
+
 		JustBeforeEach(func() {
 			opiClient.ListReturns(lrps, nil)
 		})
@@ -125,9 +136,9 @@ var _ = Describe("Bifrost", func() {
 
 			BeforeEach(func() {
 				lrps = []opi.LRP{
-					opi.LRP{Name: "1234", Metadata: map[string]string{"process_guid": "abcd"}},
-					opi.LRP{Name: "5678", Metadata: map[string]string{"process_guid": "efgh"}},
-					opi.LRP{Name: "0213", Metadata: map[string]string{"process_guid": "ijkl"}},
+					createLRP("1234", "abcd", "3464634.2"),
+					createLRP("5678", "efgh", "235.26535"),
+					createLRP("0213", "ijkl", "2342342.2"),
 				}
 			})
 
@@ -138,6 +149,10 @@ var _ = Describe("Bifrost", func() {
 				Expect(desiredLRPSchedulingInfos[0].ProcessGuid).To(Equal("abcd"))
 				Expect(desiredLRPSchedulingInfos[1].ProcessGuid).To(Equal("efgh"))
 				Expect(desiredLRPSchedulingInfos[2].ProcessGuid).To(Equal("ijkl"))
+
+				Expect(desiredLRPSchedulingInfos[0].Annotation).To(Equal("3464634.2"))
+				Expect(desiredLRPSchedulingInfos[1].Annotation).To(Equal("235.26535"))
+				Expect(desiredLRPSchedulingInfos[2].Annotation).To(Equal("2342342.2"))
 			})
 		})
 
