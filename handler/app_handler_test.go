@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/bbs/models"
-	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/eirinifakes"
 	. "code.cloudfoundry.org/eirini/handler"
+	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
 	"github.com/gogo/protobuf/jsonpb"
@@ -56,7 +56,7 @@ var _ = Describe("AppHandler", func() {
 		})
 
 		It("should call the bifrost with the desired LRPs request from Cloud Controller", func() {
-			expectedRequest := eirini.DesireLRPRequest{
+			expectedRequest := cf.DesireLRPRequest{
 				ProcessGuid:  "myguid",
 				StartCommand: "./start",
 				Environment:  map[string]string{"env_var": "env_var_value"},

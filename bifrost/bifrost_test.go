@@ -22,7 +22,7 @@ var _ = Describe("Bifrost", func() {
 		var (
 			err       error
 			bfrst     eirini.Bifrost
-			request   eirini.DesireLRPRequest
+			request   cf.DesireLRPRequest
 			converter *bifrostfakes.FakeConverter
 			desirer   *opifakes.FakeDesirer
 		)

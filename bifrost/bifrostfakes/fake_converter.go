@@ -4,16 +4,16 @@ package bifrostfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/bifrost"
+	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 )
 
 type FakeConverter struct {
-	ConvertStub        func(request eirini.DesireLRPRequest) (opi.LRP, error)
+	ConvertStub        func(request cf.DesireLRPRequest) (opi.LRP, error)
 	convertMutex       sync.RWMutex
 	convertArgsForCall []struct {
-		request eirini.DesireLRPRequest
+		request cf.DesireLRPRequest
 	}
 	convertReturns struct {
 		result1 opi.LRP
@@ -27,11 +27,11 @@ type FakeConverter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeConverter) Convert(request eirini.DesireLRPRequest) (opi.LRP, error) {
+func (fake *FakeConverter) Convert(request cf.DesireLRPRequest) (opi.LRP, error) {
 	fake.convertMutex.Lock()
 	ret, specificReturn := fake.convertReturnsOnCall[len(fake.convertArgsForCall)]
 	fake.convertArgsForCall = append(fake.convertArgsForCall, struct {
-		request eirini.DesireLRPRequest
+		request cf.DesireLRPRequest
 	}{request})
 	fake.recordInvocation("Convert", []interface{}{request})
 	fake.convertMutex.Unlock()
@@ -50,7 +50,7 @@ func (fake *FakeConverter) ConvertCallCount() int {
 	return len(fake.convertArgsForCall)
 }
 
-func (fake *FakeConverter) ConvertArgsForCall(i int) eirini.DesireLRPRequest {
+func (fake *FakeConverter) ConvertArgsForCall(i int) cf.DesireLRPRequest {
 	fake.convertMutex.RLock()
 	defer fake.convertMutex.RUnlock()
 	return fake.convertArgsForCall[i].request

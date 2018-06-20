@@ -7,6 +7,7 @@ import (
 
 	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/eirini"
+	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/lager"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/julienschmidt/httprouter"
@@ -22,7 +23,7 @@ type AppHandler struct {
 }
 
 func (a *AppHandler) Desire(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	var request eirini.DesireLRPRequest
+	var request cf.DesireLRPRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		a.logger.Error("request-body-decoding-failed", err)
 		w.WriteHeader(http.StatusBadRequest)

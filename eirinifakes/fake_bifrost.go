@@ -7,14 +7,15 @@ import (
 
 	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/eirini"
+	"code.cloudfoundry.org/eirini/models/cf"
 )
 
 type FakeBifrost struct {
-	TransferStub        func(ctx context.Context, ccMessages eirini.DesireLRPRequest) error
+	TransferStub        func(ctx context.Context, request cf.DesireLRPRequest) error
 	transferMutex       sync.RWMutex
 	transferArgsForCall []struct {
-		ctx        context.Context
-		ccMessages eirini.DesireLRPRequest
+		ctx     context.Context
+		request cf.DesireLRPRequest
 	}
 	transferReturns struct {
 		result1 error
@@ -63,17 +64,17 @@ type FakeBifrost struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeBifrost) Transfer(ctx context.Context, ccMessages eirini.DesireLRPRequest) error {
+func (fake *FakeBifrost) Transfer(ctx context.Context, request cf.DesireLRPRequest) error {
 	fake.transferMutex.Lock()
 	ret, specificReturn := fake.transferReturnsOnCall[len(fake.transferArgsForCall)]
 	fake.transferArgsForCall = append(fake.transferArgsForCall, struct {
-		ctx        context.Context
-		ccMessages eirini.DesireLRPRequest
-	}{ctx, ccMessages})
-	fake.recordInvocation("Transfer", []interface{}{ctx, ccMessages})
+		ctx     context.Context
+		request cf.DesireLRPRequest
+	}{ctx, request})
+	fake.recordInvocation("Transfer", []interface{}{ctx, request})
 	fake.transferMutex.Unlock()
 	if fake.TransferStub != nil {
-		return fake.TransferStub(ctx, ccMessages)
+		return fake.TransferStub(ctx, request)
 	}
 	if specificReturn {
 		return ret.result1
@@ -87,10 +88,10 @@ func (fake *FakeBifrost) TransferCallCount() int {
 	return len(fake.transferArgsForCall)
 }
 
-func (fake *FakeBifrost) TransferArgsForCall(i int) (context.Context, eirini.DesireLRPRequest) {
+func (fake *FakeBifrost) TransferArgsForCall(i int) (context.Context, cf.DesireLRPRequest) {
 	fake.transferMutex.RLock()
 	defer fake.transferMutex.RUnlock()
-	return fake.transferArgsForCall[i].ctx, fake.transferArgsForCall[i].ccMessages
+	return fake.transferArgsForCall[i].ctx, fake.transferArgsForCall[i].request
 }
 
 func (fake *FakeBifrost) TransferReturns(result1 error) {

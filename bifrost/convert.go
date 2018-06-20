@@ -31,7 +31,7 @@ func NewConverter(cfClient eirini.CfClient, client *http.Client, logger lager.Lo
 	}
 }
 
-func (c *DropletToImageConverter) Convert(request eirini.DesireLRPRequest) (opi.LRP, error) {
+func (c *DropletToImageConverter) Convert(request cf.DesireLRPRequest) (opi.LRP, error) {
 	vcapJson := request.Environment["VCAP_APPLICATION"]
 	vcap, err := parseVcapApplication(vcapJson)
 
@@ -71,7 +71,7 @@ func (c *DropletToImageConverter) Convert(request eirini.DesireLRPRequest) (opi.
 	}, nil
 }
 
-func (c *DropletToImageConverter) dropletToImageURI(request eirini.DesireLRPRequest, vcap cf.VcapApp) (string, error) {
+func (c *DropletToImageConverter) dropletToImageURI(request cf.DesireLRPRequest, vcap cf.VcapApp) (string, error) {
 	if request.DockerImageUrl != "" {
 		return request.DockerImageUrl, nil
 	}

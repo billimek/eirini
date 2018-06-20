@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 
-	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/bifrost"
 	"code.cloudfoundry.org/eirini/eirinifakes"
 	"code.cloudfoundry.org/eirini/models/cf"
@@ -24,7 +23,7 @@ var _ = Describe("Convert CC DesiredApp into an opi LRP", func() {
 		lrp              opi.LRP
 		err              error
 		registryURL      string
-		desireLRPRequest eirini.DesireLRPRequest
+		desireLRPRequest cf.DesireLRPRequest
 		converter        bifrost.Converter
 	)
 
@@ -37,7 +36,7 @@ var _ = Describe("Convert CC DesiredApp into an opi LRP", func() {
 		fakeServer.AppendHandlers(
 			ghttp.VerifyRequest("POST", "/v2/transformers/bumblebee/blobs/"),
 		)
-		desireLRPRequest = eirini.DesireLRPRequest{
+		desireLRPRequest = cf.DesireLRPRequest{
 			ProcessGuid:    "b194809b-88c0-49af-b8aa-69da097fc360-2fdc448f-6bac-4085-9426-87d0124c433a",
 			DropletHash:    "the-droplet-hash",
 			DockerImageUrl: "the-image-url",

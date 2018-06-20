@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"code.cloudfoundry.org/bbs/models"
+	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 )
@@ -78,7 +79,7 @@ type Extractor interface {
 
 //go:generate counterfeiter . Bifrost
 type Bifrost interface {
-	Transfer(ctx context.Context, ccMessages DesireLRPRequest) error
+	Transfer(ctx context.Context, request cf.DesireLRPRequest) error
 	List(ctx context.Context) ([]*models.DesiredLRPSchedulingInfo, error)
 	Update(ctx context.Context, update models.UpdateDesiredLRPRequest) error
 	Get(ctx context.Context, guid string) *models.DesiredLRP
@@ -87,14 +88,4 @@ type Bifrost interface {
 func GetInternalServiceName(appName string) string {
 	//Prefix service as the appName could start with numerical characters, which is not allowed
 	return fmt.Sprintf("cf-%s", appName)
-}
-
-type DesireLRPRequest struct {
-	ProcessGuid    string            `json:"process_guid"`
-	DockerImageUrl string            `json:"docker_image"`
-	DropletHash    string            `json:"droplet_hash"`
-	StartCommand   string            `json:"start_command"`
-	Environment    map[string]string `json:"environment"`
-	NumInstances   int               `json:"instances"`
-	LastUpdated    string            `json:"last_updated"`
 }

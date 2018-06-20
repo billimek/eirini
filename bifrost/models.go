@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 )
 
+//go:generate counterfeiter . Converter
 type Converter interface {
-	Convert(request eirini.DesireLRPRequest) (opi.LRP, error)
+	Convert(request cf.DesireLRPRequest) (opi.LRP, error)
 }
 
 func dropletDownloadUri(baseUrl string, appGuid string) string {

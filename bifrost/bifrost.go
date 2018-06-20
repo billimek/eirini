@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 
 	"code.cloudfoundry.org/bbs/models"
-	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 	"code.cloudfoundry.org/lager"
@@ -18,7 +17,7 @@ type Bifrost struct {
 	Logger    lager.Logger
 }
 
-func (c *Bifrost) Transfer(ctx context.Context, request eirini.DesireLRPRequest) error {
+func (c *Bifrost) Transfer(ctx context.Context, request cf.DesireLRPRequest) error {
 	desiredLRP, err := c.Converter.Convert(request)
 	if err != nil {
 		c.Logger.Error("failed-to-convert-request", err, lager.Data{"desire-lrp-request": request})
