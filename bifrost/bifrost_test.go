@@ -218,6 +218,7 @@ var _ = Describe("Bifrost", func() {
 				lrp := opi.LRP{
 					Name:            "app_name",
 					TargetInstances: 2,
+					Metadata:        map[string]string{cf.LastUpdated: "whenever"},
 				}
 				opiClient.GetReturns(&lrp, nil)
 			})
@@ -226,7 +227,8 @@ var _ = Describe("Bifrost", func() {
 
 				BeforeEach(func() {
 					updatedInstances := int32(5)
-					updateRequest.Update = &models.DesiredLRPUpdate{Instances: &updatedInstances}
+					updatedTimestamp := "21421321.3"
+					updateRequest.Update = &models.DesiredLRPUpdate{Instances: &updatedInstances, Annotation: &updatedTimestamp}
 					opiClient.UpdateReturns(nil)
 				})
 
@@ -241,6 +243,7 @@ var _ = Describe("Bifrost", func() {
 					_, lrp := opiClient.UpdateArgsForCall(0)
 					Expect(lrp.Name).To(Equal("app_name"))
 					Expect(lrp.TargetInstances).To(Equal(int(*updateRequest.Update.Instances)))
+					Expect(lrp.Metadata[cf.LastUpdated]).To(Equal("21421321.3"))
 				})
 
 				It("should not return an error", func() {

@@ -57,6 +57,7 @@ func (b *Bifrost) Update(ctx context.Context, update models.UpdateDesiredLRPRequ
 	}
 
 	lrp.TargetInstances = int(*update.Update.Instances)
+	lrp.Metadata[cf.LastUpdated] = *update.Update.Annotation
 
 	return b.Desirer.Update(ctx, *lrp)
 }
