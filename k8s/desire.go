@@ -101,6 +101,7 @@ func (d *Desirer) Update(ctx context.Context, updated opi.LRP) error {
 
 	count := int32(updated.TargetInstances)
 	deployment.Spec.Replicas = &count
+	deployment.Annotations[cf.LastUpdated] = updated.Metadata[cf.LastUpdated]
 
 	_, err = d.Client.AppsV1beta1().Deployments(d.KubeNamespace).Update(deployment)
 	return err

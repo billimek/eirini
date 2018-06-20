@@ -239,10 +239,10 @@ var _ = Describe("Desiring some LRPs", func() {
 
 			AfterEach(func() {
 				cleanupDeployment(lrp.Name)
-				Eventually(listDeployments, 5*time.Second).Should(BeEmpty())
+				Eventually(listDeployments, timeout).Should(BeEmpty())
 
 				cleanupService(lrp.Name)
-				Eventually(listServices, 5*time.Second).Should(BeEmpty())
+				Eventually(listServices, timeout).Should(BeEmpty())
 			})
 
 		})
@@ -269,6 +269,7 @@ var _ = Describe("Desiring some LRPs", func() {
 		}
 
 		deployment.Name = appName
+		deployment.Annotations = map[string]string{cf.LastUpdated: "whenever"}
 		deployment.Spec.Template.Labels = map[string]string{
 			"name": appName,
 		}
@@ -367,7 +368,7 @@ var _ = Describe("Desiring some LRPs", func() {
 
 			AfterEach(func() {
 				cleanupDeployment("test-app")
-				Eventually(listDeployments, 5*time.Second).Should(BeEmpty())
+				Eventually(listDeployments, timeout).Should(BeEmpty())
 			})
 		})
 
@@ -425,7 +426,10 @@ var _ = Describe("Desiring some LRPs", func() {
 				}
 
 				JustBeforeEach(func() {
-					err = desirer.Update(context.Background(), opi.LRP{Name: appName, TargetInstances: 5})
+					err = desirer.Update(context.Background(), opi.LRP{
+						Name:            appName,
+						TargetInstances: 5,
+						Metadata:        map[string]string{cf.LastUpdated: "123214.2"}})
 				})
 
 				It("scales the app without error", func() {
@@ -435,22 +439,28 @@ var _ = Describe("Desiring some LRPs", func() {
 				It("updates the desired number of app instances", func() {
 					Eventually(func() int32 {
 						return *getDeployment(appName).Spec.Replicas
-					}, 5*time.Second).Should(Equal(int32(5)))
+					}, timeout).Should(Equal(int32(5)))
 				})
 
 				It("creates the desired number of app instances", func() {
 					Eventually(func() int32 {
 						return getDeployment(appName).Status.Replicas
-					}, 5*time.Second).Should(Equal(int32(5)))
+					}, timeout).Should(Equal(int32(5)))
 
 					Eventually(func() int32 {
 						return getDeployment(appName).Status.UpdatedReplicas
-					}, 5*time.Second).Should(Equal(int32(5)))
+					}, timeout).Should(Equal(int32(5)))
+				})
+
+				It("updates the timestamp of the last update", func() {
+					Eventually(func() map[string]string {
+						return getDeployment(appName).Annotations
+					}, timeout).Should(HaveKeyWithValue(cf.LastUpdated, "123214.2"))
 				})
 
 				AfterEach(func() {
 					cleanupDeployment(appName)
-					Eventually(listDeployments, 5*time.Second).Should(BeEmpty())
+					Eventually(listDeployments, timeout).Should(BeEmpty())
 				})
 			})
 		})
