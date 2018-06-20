@@ -362,6 +362,10 @@ var _ = Describe("Desiring some LRPs", func() {
 				Expect(lrp.TargetInstances).To(Equal(int(replicas)))
 			})
 
+			It("should contain last_updated timestamp", func() {
+				Expect(lrp.Metadata[cf.LastUpdated]).To(Equal("whenever"))
+			})
+
 			It("should not return an error", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})

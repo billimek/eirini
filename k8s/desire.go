@@ -84,12 +84,17 @@ func (d *Desirer) Get(ctx context.Context, name string) (*opi.LRP, error) {
 	assertSingleContainer(containers)
 	container := containers[0]
 
+	metadata := map[string]string{
+		cf.LastUpdated: deployment.Annotations[cf.LastUpdated],
+	}
+
 	return &opi.LRP{
 		Name:            deployment.Name,
 		Image:           container.Image,
 		Command:         container.Command,
 		Env:             toMap(container.Env),
 		TargetInstances: int(*deployment.Spec.Replicas),
+		Metadata:        metadata,
 	}, nil
 }
 
