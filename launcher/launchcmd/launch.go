@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-//This is a smal wrapper arounc the launcher which is required to
+//This is a small wrapper around the launcher which is required to
 //get the start_command from the staging_info.yml
 //inside the container. The command is passed to the
 //code.cloudfoundry.org/buildpackapplifecycle/launcher.

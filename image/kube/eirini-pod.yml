@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: eirini
+  labels:
+    app: eirini
+spec:
+  volumes:
+    - name: config-volume
+      configMap:
+        name: opi-config
+        items:
+        - key: opi
+          path: opi.yml
+        - key: kube
+          path: kube.conf
+  containers:
+  - name: opi
+    image: eirini/opi
+    volumeMounts:
+    - name: config-volume
+      mountPath: /workspace/jobs/opi/config
+    ports:
+      - containerPort: 8085
+  - name: registry
+    image: eirini/registry
+    ports:
+      - containerPort: 8080
+
+
