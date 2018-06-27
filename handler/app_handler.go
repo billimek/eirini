@@ -72,9 +72,9 @@ func (a *AppHandler) List(w http.ResponseWriter, r *http.Request, ps httprouter.
 	a.logError("Could not write response", err)
 }
 
-func (a *AppHandler) Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (a *AppHandler) GetApp(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	processGuid := ps.ByName("process_guid")
-	desiredLRP := a.bifrost.Get(r.Context(), processGuid)
+	desiredLRP := a.bifrost.GetApp(r.Context(), processGuid)
 	if desiredLRP == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -120,6 +120,41 @@ func (a *AppHandler) Update(w http.ResponseWriter, r *http.Request, ps httproute
 		a.logger.Error("update-app-failed", err)
 		err = writeUpdateErrorResponse(w, err, http.StatusInternalServerError)
 		a.logError("Could not write response", err)
+	}
+}
+
+func (a *AppHandler) GetInstances(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	guid := ps.ByName("process_guid")
+	instances, err := a.bifrost.GetInstances(r.Context(), guid)
+	response := a.createGetInstancesResponse(guid, instances, err)
+
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		a.logger.Error("encode-json-failed", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func (a *AppHandler) createGetInstancesResponse(guid string, instances []*cf.Instance, err error) cf.GetInstancesResponse {
+	if err != nil {
+		return createErrorGetInstancesResponse(guid, err)
+	}
+
+	if len(instances) == 0 {
+		return createErrorGetInstancesResponse(guid, errors.New("no-running-instances"))
+	}
+
+	return cf.GetInstancesResponse{
+		ProcessGuid: guid,
+		Instances:   instances,
+	}
+}
+
+func createErrorGetInstancesResponse(guid string, err error) cf.GetInstancesResponse {
+	return cf.GetInstancesResponse{
+		ProcessGuid: guid,
+		Error:       err.Error(),
 	}
 }
 

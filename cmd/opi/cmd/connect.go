@@ -38,7 +38,7 @@ func connect(cmd *cobra.Command, args []string) {
 	exitWithError(err)
 
 	cfg := setConfigFromFile(path)
-	converger := initBifrost(cfg)
+	bifrost := initBifrost(cfg)
 
 	launchRouteEmitter(
 		cfg.Properties.KubeConfig,
@@ -51,7 +51,7 @@ func connect(cmd *cobra.Command, args []string) {
 	handlerLogger := lager.NewLogger("handler")
 	handlerLogger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
 
-	handler := handler.New(converger, handlerLogger)
+	handler := handler.New(bifrost, handlerLogger)
 
 	log.Fatal(http.ListenAndServe("0.0.0.0:8085", handler))
 }

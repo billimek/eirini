@@ -48,17 +48,31 @@ type FakeBifrost struct {
 	updateReturnsOnCall map[int]struct {
 		result1 error
 	}
-	GetStub        func(ctx context.Context, guid string) *models.DesiredLRP
-	getMutex       sync.RWMutex
-	getArgsForCall []struct {
+	GetAppStub        func(ctx context.Context, guid string) *models.DesiredLRP
+	getAppMutex       sync.RWMutex
+	getAppArgsForCall []struct {
 		ctx  context.Context
 		guid string
 	}
-	getReturns struct {
+	getAppReturns struct {
 		result1 *models.DesiredLRP
 	}
-	getReturnsOnCall map[int]struct {
+	getAppReturnsOnCall map[int]struct {
 		result1 *models.DesiredLRP
+	}
+	GetInstancesStub        func(ctx context.Context, guid string) ([]*cf.Instance, error)
+	getInstancesMutex       sync.RWMutex
+	getInstancesArgsForCall []struct {
+		ctx  context.Context
+		guid string
+	}
+	getInstancesReturns struct {
+		result1 []*cf.Instance
+		result2 error
+	}
+	getInstancesReturnsOnCall map[int]struct {
+		result1 []*cf.Instance
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -213,53 +227,105 @@ func (fake *FakeBifrost) UpdateReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeBifrost) Get(ctx context.Context, guid string) *models.DesiredLRP {
-	fake.getMutex.Lock()
-	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
-	fake.getArgsForCall = append(fake.getArgsForCall, struct {
+func (fake *FakeBifrost) GetApp(ctx context.Context, guid string) *models.DesiredLRP {
+	fake.getAppMutex.Lock()
+	ret, specificReturn := fake.getAppReturnsOnCall[len(fake.getAppArgsForCall)]
+	fake.getAppArgsForCall = append(fake.getAppArgsForCall, struct {
 		ctx  context.Context
 		guid string
 	}{ctx, guid})
-	fake.recordInvocation("Get", []interface{}{ctx, guid})
-	fake.getMutex.Unlock()
-	if fake.GetStub != nil {
-		return fake.GetStub(ctx, guid)
+	fake.recordInvocation("GetApp", []interface{}{ctx, guid})
+	fake.getAppMutex.Unlock()
+	if fake.GetAppStub != nil {
+		return fake.GetAppStub(ctx, guid)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.getReturns.result1
+	return fake.getAppReturns.result1
 }
 
-func (fake *FakeBifrost) GetCallCount() int {
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
-	return len(fake.getArgsForCall)
+func (fake *FakeBifrost) GetAppCallCount() int {
+	fake.getAppMutex.RLock()
+	defer fake.getAppMutex.RUnlock()
+	return len(fake.getAppArgsForCall)
 }
 
-func (fake *FakeBifrost) GetArgsForCall(i int) (context.Context, string) {
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
-	return fake.getArgsForCall[i].ctx, fake.getArgsForCall[i].guid
+func (fake *FakeBifrost) GetAppArgsForCall(i int) (context.Context, string) {
+	fake.getAppMutex.RLock()
+	defer fake.getAppMutex.RUnlock()
+	return fake.getAppArgsForCall[i].ctx, fake.getAppArgsForCall[i].guid
 }
 
-func (fake *FakeBifrost) GetReturns(result1 *models.DesiredLRP) {
-	fake.GetStub = nil
-	fake.getReturns = struct {
+func (fake *FakeBifrost) GetAppReturns(result1 *models.DesiredLRP) {
+	fake.GetAppStub = nil
+	fake.getAppReturns = struct {
 		result1 *models.DesiredLRP
 	}{result1}
 }
 
-func (fake *FakeBifrost) GetReturnsOnCall(i int, result1 *models.DesiredLRP) {
-	fake.GetStub = nil
-	if fake.getReturnsOnCall == nil {
-		fake.getReturnsOnCall = make(map[int]struct {
+func (fake *FakeBifrost) GetAppReturnsOnCall(i int, result1 *models.DesiredLRP) {
+	fake.GetAppStub = nil
+	if fake.getAppReturnsOnCall == nil {
+		fake.getAppReturnsOnCall = make(map[int]struct {
 			result1 *models.DesiredLRP
 		})
 	}
-	fake.getReturnsOnCall[i] = struct {
+	fake.getAppReturnsOnCall[i] = struct {
 		result1 *models.DesiredLRP
 	}{result1}
+}
+
+func (fake *FakeBifrost) GetInstances(ctx context.Context, guid string) ([]*cf.Instance, error) {
+	fake.getInstancesMutex.Lock()
+	ret, specificReturn := fake.getInstancesReturnsOnCall[len(fake.getInstancesArgsForCall)]
+	fake.getInstancesArgsForCall = append(fake.getInstancesArgsForCall, struct {
+		ctx  context.Context
+		guid string
+	}{ctx, guid})
+	fake.recordInvocation("GetInstances", []interface{}{ctx, guid})
+	fake.getInstancesMutex.Unlock()
+	if fake.GetInstancesStub != nil {
+		return fake.GetInstancesStub(ctx, guid)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.getInstancesReturns.result1, fake.getInstancesReturns.result2
+}
+
+func (fake *FakeBifrost) GetInstancesCallCount() int {
+	fake.getInstancesMutex.RLock()
+	defer fake.getInstancesMutex.RUnlock()
+	return len(fake.getInstancesArgsForCall)
+}
+
+func (fake *FakeBifrost) GetInstancesArgsForCall(i int) (context.Context, string) {
+	fake.getInstancesMutex.RLock()
+	defer fake.getInstancesMutex.RUnlock()
+	return fake.getInstancesArgsForCall[i].ctx, fake.getInstancesArgsForCall[i].guid
+}
+
+func (fake *FakeBifrost) GetInstancesReturns(result1 []*cf.Instance, result2 error) {
+	fake.GetInstancesStub = nil
+	fake.getInstancesReturns = struct {
+		result1 []*cf.Instance
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeBifrost) GetInstancesReturnsOnCall(i int, result1 []*cf.Instance, result2 error) {
+	fake.GetInstancesStub = nil
+	if fake.getInstancesReturnsOnCall == nil {
+		fake.getInstancesReturnsOnCall = make(map[int]struct {
+			result1 []*cf.Instance
+			result2 error
+		})
+	}
+	fake.getInstancesReturnsOnCall[i] = struct {
+		result1 []*cf.Instance
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeBifrost) Invocations() map[string][][]interface{} {
@@ -271,8 +337,10 @@ func (fake *FakeBifrost) Invocations() map[string][][]interface{} {
 	defer fake.listMutex.RUnlock()
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
+	fake.getAppMutex.RLock()
+	defer fake.getAppMutex.RUnlock()
+	fake.getInstancesMutex.RLock()
+	defer fake.getInstancesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
