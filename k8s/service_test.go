@@ -36,7 +36,7 @@ var _ = Describe("Service", func() {
 
 	JustBeforeEach(func() {
 		fakeClient = fake.NewSimpleClientset()
-		serviceManager = NewServiceManager(fakeClient)
+		serviceManager = NewServiceManager(namespace, fakeClient)
 		for _, l := range lrps {
 			_, err := fakeClient.CoreV1().Services(namespace).Create(toService(l, namespace))
 			Expect(err).ToNot(HaveOccurred())
@@ -45,7 +45,7 @@ var _ = Describe("Service", func() {
 
 	Context("Delete a service", func() {
 		It("deletes the service", func() {
-			err := serviceManager.Delete("odin", namespace)
+			err := serviceManager.Delete("odin")
 			Expect(err).ToNot(HaveOccurred())
 
 			services, _ := fakeClient.CoreV1().Services(namespace).List(av1.ListOptions{})
@@ -55,7 +55,7 @@ var _ = Describe("Service", func() {
 
 		Context("when the service does not exist", func() {
 			It("returns an error", func() {
-				err := serviceManager.Delete("non-existing", namespace)
+				err := serviceManager.Delete("non-existing")
 				Expect(err).To(HaveOccurred())
 			})
 		})

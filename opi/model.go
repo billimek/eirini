@@ -27,7 +27,7 @@ type Task struct {
 
 //go:generate counterfeiter . Desirer
 type Desirer interface {
-	Desire(ctx context.Context, lrps []LRP) error
+	Desire(ctx context.Context, lrps *LRP) error
 	List(ctx context.Context) ([]LRP, error)
 	Get(ctx context.Context, name string) (*LRP, error)
 	Update(ctx context.Context, updated LRP) error

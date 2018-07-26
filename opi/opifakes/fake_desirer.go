@@ -9,11 +9,11 @@ import (
 )
 
 type FakeDesirer struct {
-	DesireStub        func(ctx context.Context, lrps []opi.LRP) error
+	DesireStub        func(ctx context.Context, lrps *opi.LRP) error
 	desireMutex       sync.RWMutex
 	desireArgsForCall []struct {
 		ctx  context.Context
-		lrps []opi.LRP
+		lrps *opi.LRP
 	}
 	desireReturns struct {
 		result1 error
@@ -76,19 +76,14 @@ type FakeDesirer struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeDesirer) Desire(ctx context.Context, lrps []opi.LRP) error {
-	var lrpsCopy []opi.LRP
-	if lrps != nil {
-		lrpsCopy = make([]opi.LRP, len(lrps))
-		copy(lrpsCopy, lrps)
-	}
+func (fake *FakeDesirer) Desire(ctx context.Context, lrps *opi.LRP) error {
 	fake.desireMutex.Lock()
 	ret, specificReturn := fake.desireReturnsOnCall[len(fake.desireArgsForCall)]
 	fake.desireArgsForCall = append(fake.desireArgsForCall, struct {
 		ctx  context.Context
-		lrps []opi.LRP
-	}{ctx, lrpsCopy})
-	fake.recordInvocation("Desire", []interface{}{ctx, lrpsCopy})
+		lrps *opi.LRP
+	}{ctx, lrps})
+	fake.recordInvocation("Desire", []interface{}{ctx, lrps})
 	fake.desireMutex.Unlock()
 	if fake.DesireStub != nil {
 		return fake.DesireStub(ctx, lrps)
@@ -105,7 +100,7 @@ func (fake *FakeDesirer) DesireCallCount() int {
 	return len(fake.desireArgsForCall)
 }
 
-func (fake *FakeDesirer) DesireArgsForCall(i int) (context.Context, []opi.LRP) {
+func (fake *FakeDesirer) DesireArgsForCall(i int) (context.Context, *opi.LRP) {
 	fake.desireMutex.RLock()
 	defer fake.desireMutex.RUnlock()
 	return fake.desireArgsForCall[i].ctx, fake.desireArgsForCall[i].lrps
