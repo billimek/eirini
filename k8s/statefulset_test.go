@@ -6,6 +6,6 @@ import (
 	//. "code.cloudfoundry.org/eirini/k8s"
 )
 
-var _ = FDescribe("Statefulset", func() {
+var _ = Describe("Statefulset", func() {
 
 })

@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"code.cloudfoundry.org/eirini/launcher"
 	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 	"k8s.io/api/apps/v1beta1"
@@ -59,6 +58,8 @@ func toLRPs(deployments *v1beta1.DeploymentList) []opi.LRP {
 	lrps := []opi.LRP{}
 	for _, d := range deployments.Items {
 		lrp := opi.LRP{
+			Name:    d.Name,
+			Command: d.Spec.Template.Spec.Containers[0].Command,
 			Metadata: map[string]string{
 				cf.ProcessGUID: d.Annotations[cf.ProcessGUID],
 				cf.LastUpdated: d.Annotations[cf.LastUpdated],
@@ -70,7 +71,6 @@ func toLRPs(deployments *v1beta1.DeploymentList) []opi.LRP {
 }
 
 func toDeployment(lrp *opi.LRP) *v1beta1.Deployment {
-	environment := launcher.SetupEnv(lrp.Command[0])
 	deployment := &v1beta1.Deployment{
 		Spec: v1beta1.DeploymentSpec{
 			Replicas: int32ptr(lrp.TargetInstances),
@@ -78,12 +78,10 @@ func toDeployment(lrp *opi.LRP) *v1beta1.Deployment {
 				Spec: v1.PodSpec{
 					Containers: []v1.Container{
 						v1.Container{
-							Name:  "web",
-							Image: lrp.Image,
-							Command: []string{
-								launcher.Launch,
-							},
-							Env: MapToEnvVar(MergeMaps(lrp.Env, environment)),
+							Name:    "opi",
+							Image:   lrp.Image,
+							Command: lrp.Command,
+							Env:     MapToEnvVar(lrp.Env),
 							Ports: []v1.ContainerPort{
 								v1.ContainerPort{
 									Name:          "expose",

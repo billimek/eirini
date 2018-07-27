@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/launcher"
 	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 	. "github.com/onsi/ginkgo"
@@ -95,18 +94,6 @@ var _ = Describe("Deployment", func() {
 		client.CoreV1().Services(namespace).Delete(serviceName, &av1.DeleteOptions{})
 	}
 
-	//createClient := func() {
-	//config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
-	//if err != nil {
-	//panic(err.Error())
-	//}
-
-	//client, err = kubernetes.NewForConfig(config)
-	//if err != nil {
-	//panic(err.Error())
-	//}
-	//}
-
 	BeforeEach(func() {
 		lrps = []opi.LRP{
 			createLRP("odin", "1234.5"),
@@ -133,7 +120,7 @@ var _ = Describe("Deployment", func() {
 		}
 
 		for _, l := range lrps {
-			client.AppsV1beta1().Deployments(namespace).Create(toDeployment(l))
+			client.AppsV1beta1().Deployments(namespace).Create(toDeployment(&l, namespace))
 		}
 
 		deploymentManager = NewDeploymentManager(namespace, client)
@@ -144,7 +131,7 @@ var _ = Describe("Deployment", func() {
 
 		JustBeforeEach(func() {
 			lrp = createLRP("Baldur", "1234.5")
-			lrp.Name = "Baldur"
+			lrps = append(lrps, lrp)
 
 			err = deploymentManager.Create(&lrp)
 		})
@@ -157,12 +144,22 @@ var _ = Describe("Deployment", func() {
 			deployment, err := client.AppsV1beta1().Deployments(namespace).Get("Baldur", av1.GetOptions{})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(deployment).To(Equal(toDeployment(lrp)))
+			Expect(deployment).To(Equal(toDeployment(&lrp, namespace)))
+		})
+
+		Context("When redeploying an existing LRP", func() {
+			BeforeEach(func() {
+				lrp = createLRP("Baldur", "1234.5")
+				lrps = append(lrps, lrp)
+			})
+
+			It("should fail", func() {
+				Expect(err).To(HaveOccurred())
+			})
 		})
 	})
 
 	Context("List/Delete", func() {
-
 		Context("List deployments", func() {
 
 			It("translates all existing deployments to opi.LRPs", func() {
@@ -232,9 +229,8 @@ func getDeploymentNames(deployments []v1beta1.Deployment) []string {
 	return deploymentNames
 }
 
-func toDeployment(lrp *opi.LRP) *v1beta1.Deployment {
+func toDeployment(lrp *opi.LRP, namespace string) *v1beta1.Deployment {
 	targetInstances := int32(lrp.TargetInstances)
-	environment := launcher.SetupEnv(lrp.Command[0])
 	deployment := &v1beta1.Deployment{
 		Spec: v1beta1.DeploymentSpec{
 			Replicas: &targetInstances,
@@ -242,12 +238,10 @@ func toDeployment(lrp *opi.LRP) *v1beta1.Deployment {
 				Spec: v1.PodSpec{
 					Containers: []v1.Container{
 						v1.Container{
-							Name:  "web",
-							Image: lrp.Image,
-							Command: []string{
-								launcher.Launch,
-							},
-							Env: MapToEnvVar(MergeMaps(lrp.Env, environment)),
+							Name:    "opi",
+							Image:   lrp.Image,
+							Command: lrp.Command,
+							Env:     MapToEnvVar(lrp.Env),
 							Ports: []v1.ContainerPort{
 								v1.ContainerPort{
 									Name:          "expose",
@@ -262,6 +256,7 @@ func toDeployment(lrp *opi.LRP) *v1beta1.Deployment {
 	}
 
 	deployment.Name = lrp.Name
+	deployment.Namespace = namespace
 	deployment.Spec.Template.Labels = map[string]string{
 		"name": lrp.Name,
 	}
@@ -278,6 +273,7 @@ func toDeployment(lrp *opi.LRP) *v1beta1.Deployment {
 
 func createLRP(processGUID, lastUpdated string) opi.LRP {
 	return opi.LRP{
+		Name:    processGUID,
 		Command: []string{"ls", "-la"},
 		Metadata: map[string]string{
 			cf.ProcessGUID: processGUID,
