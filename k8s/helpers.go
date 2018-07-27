@@ -7,7 +7,7 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-func mergeMaps(maps ...map[string]string) map[string]string {
+func MergeMaps(maps ...map[string]string) map[string]string {
 	result := make(map[string]string)
 	for _, m := range maps {
 		for k, v := range m {
@@ -15,6 +15,15 @@ func mergeMaps(maps ...map[string]string) map[string]string {
 		}
 	}
 	return result
+}
+
+func MapToEnvVar(env map[string]string) []v1.EnvVar {
+	envVars := []v1.EnvVar{}
+	for k, v := range env {
+		envVar := v1.EnvVar{Name: k, Value: v}
+		envVars = append(envVars, envVar)
+	}
+	return envVars
 }
 
 func int32ptr(i int) *int32 {
@@ -25,11 +34,6 @@ func int32ptr(i int) *int32 {
 func int64ptr(i int) *int64 {
 	u := int64(i)
 	return &u
-}
-
-// The Kubernetes API expects multiple containers but we only ever need one.
-func asMultipleContainers(container v1.Container) []v1.Container {
-	return []v1.Container{container}
 }
 
 // Enforce our assumption that there's only ever exactly one container holding the app.

@@ -9,12 +9,10 @@ import (
 )
 
 type FakeDeploymentManager struct {
-	ListLRPsStub        func(namespace string) ([]opi.LRP, error)
+	ListLRPsStub        func() ([]opi.LRP, error)
 	listLRPsMutex       sync.RWMutex
-	listLRPsArgsForCall []struct {
-		namespace string
-	}
-	listLRPsReturns struct {
+	listLRPsArgsForCall []struct{}
+	listLRPsReturns     struct {
 		result1 []opi.LRP
 		result2 error
 	}
@@ -22,11 +20,10 @@ type FakeDeploymentManager struct {
 		result1 []opi.LRP
 		result2 error
 	}
-	DeleteStub        func(appName, namespace string) error
+	DeleteStub        func(appName string) error
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []struct {
-		appName   string
-		namespace string
+		appName string
 	}
 	deleteReturns struct {
 		result1 error
@@ -34,20 +31,29 @@ type FakeDeploymentManager struct {
 	deleteReturnsOnCall map[int]struct {
 		result1 error
 	}
+	CreateStub        func(*opi.LRP) error
+	createMutex       sync.RWMutex
+	createArgsForCall []struct {
+		arg1 *opi.LRP
+	}
+	createReturns struct {
+		result1 error
+	}
+	createReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeDeploymentManager) ListLRPs(namespace string) ([]opi.LRP, error) {
+func (fake *FakeDeploymentManager) ListLRPs() ([]opi.LRP, error) {
 	fake.listLRPsMutex.Lock()
 	ret, specificReturn := fake.listLRPsReturnsOnCall[len(fake.listLRPsArgsForCall)]
-	fake.listLRPsArgsForCall = append(fake.listLRPsArgsForCall, struct {
-		namespace string
-	}{namespace})
-	fake.recordInvocation("ListLRPs", []interface{}{namespace})
+	fake.listLRPsArgsForCall = append(fake.listLRPsArgsForCall, struct{}{})
+	fake.recordInvocation("ListLRPs", []interface{}{})
 	fake.listLRPsMutex.Unlock()
 	if fake.ListLRPsStub != nil {
-		return fake.ListLRPsStub(namespace)
+		return fake.ListLRPsStub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -59,12 +65,6 @@ func (fake *FakeDeploymentManager) ListLRPsCallCount() int {
 	fake.listLRPsMutex.RLock()
 	defer fake.listLRPsMutex.RUnlock()
 	return len(fake.listLRPsArgsForCall)
-}
-
-func (fake *FakeDeploymentManager) ListLRPsArgsForCall(i int) string {
-	fake.listLRPsMutex.RLock()
-	defer fake.listLRPsMutex.RUnlock()
-	return fake.listLRPsArgsForCall[i].namespace
 }
 
 func (fake *FakeDeploymentManager) ListLRPsReturns(result1 []opi.LRP, result2 error) {
@@ -89,17 +89,16 @@ func (fake *FakeDeploymentManager) ListLRPsReturnsOnCall(i int, result1 []opi.LR
 	}{result1, result2}
 }
 
-func (fake *FakeDeploymentManager) Delete(appName string, namespace string) error {
+func (fake *FakeDeploymentManager) Delete(appName string) error {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
-		appName   string
-		namespace string
-	}{appName, namespace})
-	fake.recordInvocation("Delete", []interface{}{appName, namespace})
+		appName string
+	}{appName})
+	fake.recordInvocation("Delete", []interface{}{appName})
 	fake.deleteMutex.Unlock()
 	if fake.DeleteStub != nil {
-		return fake.DeleteStub(appName, namespace)
+		return fake.DeleteStub(appName)
 	}
 	if specificReturn {
 		return ret.result1
@@ -113,10 +112,10 @@ func (fake *FakeDeploymentManager) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *FakeDeploymentManager) DeleteArgsForCall(i int) (string, string) {
+func (fake *FakeDeploymentManager) DeleteArgsForCall(i int) string {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
-	return fake.deleteArgsForCall[i].appName, fake.deleteArgsForCall[i].namespace
+	return fake.deleteArgsForCall[i].appName
 }
 
 func (fake *FakeDeploymentManager) DeleteReturns(result1 error) {
@@ -138,6 +137,54 @@ func (fake *FakeDeploymentManager) DeleteReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeDeploymentManager) Create(arg1 *opi.LRP) error {
+	fake.createMutex.Lock()
+	ret, specificReturn := fake.createReturnsOnCall[len(fake.createArgsForCall)]
+	fake.createArgsForCall = append(fake.createArgsForCall, struct {
+		arg1 *opi.LRP
+	}{arg1})
+	fake.recordInvocation("Create", []interface{}{arg1})
+	fake.createMutex.Unlock()
+	if fake.CreateStub != nil {
+		return fake.CreateStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.createReturns.result1
+}
+
+func (fake *FakeDeploymentManager) CreateCallCount() int {
+	fake.createMutex.RLock()
+	defer fake.createMutex.RUnlock()
+	return len(fake.createArgsForCall)
+}
+
+func (fake *FakeDeploymentManager) CreateArgsForCall(i int) *opi.LRP {
+	fake.createMutex.RLock()
+	defer fake.createMutex.RUnlock()
+	return fake.createArgsForCall[i].arg1
+}
+
+func (fake *FakeDeploymentManager) CreateReturns(result1 error) {
+	fake.CreateStub = nil
+	fake.createReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeDeploymentManager) CreateReturnsOnCall(i int, result1 error) {
+	fake.CreateStub = nil
+	if fake.createReturnsOnCall == nil {
+		fake.createReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.createReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeDeploymentManager) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -145,6 +192,8 @@ func (fake *FakeDeploymentManager) Invocations() map[string][][]interface{} {
 	defer fake.listLRPsMutex.RUnlock()
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
+	fake.createMutex.RLock()
+	defer fake.createMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -1,9 +1,11 @@
 package k8s
 
 import (
+	"code.cloudfoundry.org/eirini/launcher"
 	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 	"k8s.io/api/apps/v1beta1"
+	"k8s.io/api/core/v1"
 	av1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	ev1 "k8s.io/client-go/kubernetes/typed/apps/v1beta1"
@@ -11,23 +13,34 @@ import (
 
 //go:generate counterfeiter . DeploymentManager
 type DeploymentManager interface {
-	ListLRPs(namespace string) ([]opi.LRP, error)
-	Delete(appName, namespace string) error
+	ListLRPs() ([]opi.LRP, error)
+	Delete(appName string) error
+	Create(*opi.LRP) error
 }
 
 type deploymentManager struct {
-	client   kubernetes.Interface
-	endpoint string
+	client    kubernetes.Interface
+	namespace string
 }
 
-func NewDeploymentManager(client kubernetes.Interface) DeploymentManager {
+func NewDeploymentManager(namespace string, client kubernetes.Interface) DeploymentManager {
 	return &deploymentManager{
-		client: client,
+		namespace: namespace,
+		client:    client,
 	}
 }
 
-func (m *deploymentManager) ListLRPs(namespace string) ([]opi.LRP, error) {
-	deployments, err := m.deployments(namespace).List(av1.ListOptions{})
+func (m *deploymentManager) deployments() ev1.DeploymentInterface {
+	return m.client.AppsV1beta1().Deployments(m.namespace)
+}
+
+func (m *deploymentManager) Create(lrp *opi.LRP) error {
+	_, err := m.deployments().Create(toDeployment(lrp))
+	return err
+}
+
+func (m *deploymentManager) ListLRPs() ([]opi.LRP, error) {
+	deployments, err := m.deployments().List(av1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +50,9 @@ func (m *deploymentManager) ListLRPs(namespace string) ([]opi.LRP, error) {
 	return lrps, nil
 }
 
-func (m *deploymentManager) Delete(appName, namespace string) error {
+func (m *deploymentManager) Delete(appName string) error {
 	backgroundPropagation := av1.DeletePropagationBackground
-	return m.deployments(namespace).Delete(appName, &av1.DeleteOptions{PropagationPolicy: &backgroundPropagation})
-}
-
-func (m *deploymentManager) deployments(namespace string) ev1.DeploymentInterface {
-	return m.client.AppsV1beta1().Deployments(namespace)
+	return m.deployments().Delete(appName, &av1.DeleteOptions{PropagationPolicy: &backgroundPropagation})
 }
 
 func toLRPs(deployments *v1beta1.DeploymentList) []opi.LRP {
@@ -58,4 +67,47 @@ func toLRPs(deployments *v1beta1.DeploymentList) []opi.LRP {
 		lrps = append(lrps, lrp)
 	}
 	return lrps
+}
+
+func toDeployment(lrp *opi.LRP) *v1beta1.Deployment {
+	environment := launcher.SetupEnv(lrp.Command[0])
+	deployment := &v1beta1.Deployment{
+		Spec: v1beta1.DeploymentSpec{
+			Replicas: int32ptr(lrp.TargetInstances),
+			Template: v1.PodTemplateSpec{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						v1.Container{
+							Name:  "web",
+							Image: lrp.Image,
+							Command: []string{
+								launcher.Launch,
+							},
+							Env: MapToEnvVar(MergeMaps(lrp.Env, environment)),
+							Ports: []v1.ContainerPort{
+								v1.ContainerPort{
+									Name:          "expose",
+									ContainerPort: 8080,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	deployment.Name = lrp.Name
+	deployment.Spec.Template.Labels = map[string]string{
+		"name": lrp.Name,
+	}
+
+	deployment.Labels = map[string]string{
+		"eirini": "eirini",
+		"name":   lrp.Name,
+	}
+
+	deployment.Annotations = lrp.Metadata
+
+	return deployment
 }
