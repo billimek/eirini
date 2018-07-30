@@ -24,7 +24,7 @@ var _ = Describe("Deployment", func() {
 	var (
 		err               error
 		client            kubernetes.Interface
-		deploymentManager DeploymentManager
+		deploymentManager InstanceManager
 		lrps              []opi.LRP
 	)
 
@@ -163,7 +163,7 @@ var _ = Describe("Deployment", func() {
 		Context("List deployments", func() {
 
 			It("translates all existing deployments to opi.LRPs", func() {
-				actualLRPs, err := deploymentManager.ListLRPs()
+				actualLRPs, err := deploymentManager.List()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(actualLRPs).To(ConsistOf(lrps))
 			})
@@ -175,7 +175,7 @@ var _ = Describe("Deployment", func() {
 				})
 
 				It("returns an empy list of LRPs", func() {
-					actualLRPs, err := deploymentManager.ListLRPs()
+					actualLRPs, err := deploymentManager.List()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(actualLRPs).To(BeEmpty())
 				})
@@ -269,15 +269,4 @@ func toDeployment(lrp *opi.LRP, namespace string) *v1beta1.Deployment {
 	deployment.Annotations = lrp.Metadata
 
 	return deployment
-}
-
-func createLRP(processGUID, lastUpdated string) opi.LRP {
-	return opi.LRP{
-		Name:    processGUID,
-		Command: []string{"ls", "-la"},
-		Metadata: map[string]string{
-			cf.ProcessGUID: processGUID,
-			cf.LastUpdated: lastUpdated,
-		},
-	}
 }
