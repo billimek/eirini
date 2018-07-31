@@ -88,6 +88,17 @@ var _ = Describe("Convert CC DesiredApp into an opi LRP", func() {
 				Expect(lrp.Command).To(Equal([]string{launcher.Launch}))
 			})
 
+			It("should set the desired environment variables", func() {
+				val, ok := lrp.Env["VCAP_APPLICATION"]
+				Expect(ok).To(BeTrue())
+				Expect(val).To(Equal(desireLRPRequest.Environment["VCAP_APPLICATION"]))
+			})
+
+			It("should set the launcher specific environment variables", func() {
+				val, ok := lrp.Env["PORT"]
+				Expect(ok).To(BeTrue())
+				Expect(val).To(Equal("8080"))
+			})
 		}
 
 		Context("When the Docker image is provided", func() {

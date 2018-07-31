@@ -52,6 +52,8 @@ func (c *DropletToImageConverter) Convert(request cf.DesireLRPRequest) (opi.LRP,
 		panic(err)
 	}
 
+	lev := launcher.SetupEnv(launcher.Launch)
+
 	return opi.LRP{
 		Name:            vcap.AppID,
 		Image:           request.DockerImageURL,
@@ -59,7 +61,7 @@ func (c *DropletToImageConverter) Convert(request cf.DesireLRPRequest) (opi.LRP,
 		Command: []string{
 			launcher.Launch,
 		},
-		Env: request.Environment,
+		Env: mergeMaps(request.Environment, lev),
 		Metadata: map[string]string{
 			cf.VcapAppName: vcap.AppName,
 			cf.VcapAppID:   vcap.AppID,
