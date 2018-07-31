@@ -6,6 +6,7 @@ import (
 
 	"code.cloudfoundry.org/eirini/bifrost"
 	"code.cloudfoundry.org/eirini/eirinifakes"
+	"code.cloudfoundry.org/eirini/launcher"
 	"code.cloudfoundry.org/eirini/models/cf"
 	"code.cloudfoundry.org/eirini/opi"
 	"code.cloudfoundry.org/lager/lagertest"
@@ -82,6 +83,11 @@ var _ = Describe("Convert CC DesiredApp into an opi LRP", func() {
 			It("should store the last updated timestamp in metadata", func() {
 				Expect(lrp.Metadata[cf.LastUpdated]).To(Equal("23534635232.3"))
 			})
+
+			It("should set the launcher command", func() {
+				Expect(lrp.Command).To(Equal([]string{launcher.Launch}))
+			})
+
 		}
 
 		Context("When the Docker image is provided", func() {
