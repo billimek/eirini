@@ -9,15 +9,15 @@ import (
 )
 
 type FakeInstanceManager struct {
-	ListStub        func() ([]opi.LRP, error)
+	ListStub        func() ([]*opi.LRP, error)
 	listMutex       sync.RWMutex
 	listArgsForCall []struct{}
 	listReturns     struct {
-		result1 []opi.LRP
+		result1 []*opi.LRP
 		result2 error
 	}
 	listReturnsOnCall map[int]struct {
-		result1 []opi.LRP
+		result1 []*opi.LRP
 		result2 error
 	}
 	ExistsStub        func(name string) (bool, error)
@@ -83,7 +83,7 @@ type FakeInstanceManager struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInstanceManager) List() ([]opi.LRP, error) {
+func (fake *FakeInstanceManager) List() ([]*opi.LRP, error) {
 	fake.listMutex.Lock()
 	ret, specificReturn := fake.listReturnsOnCall[len(fake.listArgsForCall)]
 	fake.listArgsForCall = append(fake.listArgsForCall, struct{}{})
@@ -104,24 +104,24 @@ func (fake *FakeInstanceManager) ListCallCount() int {
 	return len(fake.listArgsForCall)
 }
 
-func (fake *FakeInstanceManager) ListReturns(result1 []opi.LRP, result2 error) {
+func (fake *FakeInstanceManager) ListReturns(result1 []*opi.LRP, result2 error) {
 	fake.ListStub = nil
 	fake.listReturns = struct {
-		result1 []opi.LRP
+		result1 []*opi.LRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeInstanceManager) ListReturnsOnCall(i int, result1 []opi.LRP, result2 error) {
+func (fake *FakeInstanceManager) ListReturnsOnCall(i int, result1 []*opi.LRP, result2 error) {
 	fake.ListStub = nil
 	if fake.listReturnsOnCall == nil {
 		fake.listReturnsOnCall = make(map[int]struct {
-			result1 []opi.LRP
+			result1 []*opi.LRP
 			result2 error
 		})
 	}
 	fake.listReturnsOnCall[i] = struct {
-		result1 []opi.LRP
+		result1 []*opi.LRP
 		result2 error
 	}{result1, result2}
 }

@@ -15,7 +15,7 @@ type Desirer struct {
 
 //go:generate counterfeiter . InstanceManager
 type InstanceManager interface {
-	List() ([]opi.LRP, error)
+	List() ([]*opi.LRP, error)
 	Exists(name string) (bool, error)
 	Get(name string) (*opi.LRP, error)
 	Create(lrp *opi.LRP) error
@@ -51,7 +51,7 @@ func (d *Desirer) Desire(lrp *opi.LRP) error {
 	return d.ingressManager.Update(lrp)
 }
 
-func (d *Desirer) List() ([]opi.LRP, error) {
+func (d *Desirer) List() ([]*opi.LRP, error) {
 	return d.instanceManager.List()
 }
 

@@ -19,7 +19,7 @@ var _ = Describe("Service", func() {
 	var (
 		fakeClient     kubernetes.Interface
 		serviceManager ServiceManager
-		lrps           []opi.LRP
+		lrps           []*opi.LRP
 	)
 
 	const (
@@ -34,7 +34,7 @@ var _ = Describe("Service", func() {
 	Context("When exposing an existing LRP", func() {
 
 		var (
-			lrp opi.LRP
+			lrp *opi.LRP
 			err error
 		)
 
@@ -43,7 +43,7 @@ var _ = Describe("Service", func() {
 		})
 
 		JustBeforeEach(func() {
-			err = serviceManager.Create(&lrp)
+			err = serviceManager.Create(lrp)
 		})
 
 		It("should not fail", func() {
@@ -54,7 +54,7 @@ var _ = Describe("Service", func() {
 			serviceName := eirini.GetInternalServiceName("baldur")
 			service, err := fakeClient.CoreV1().Services(namespace).Get(serviceName, meta.GetOptions{})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(service).To(Equal(toService(&lrp, namespace)))
+			Expect(service).To(Equal(toService(lrp, namespace)))
 		})
 
 		Context("When recreating a existing service", func() {
@@ -64,7 +64,7 @@ var _ = Describe("Service", func() {
 			})
 
 			JustBeforeEach(func() {
-				err = serviceManager.Create(&lrp)
+				err = serviceManager.Create(lrp)
 			})
 
 			It("should return an error", func() {
@@ -75,7 +75,7 @@ var _ = Describe("Service", func() {
 
 	Context("When deleting a service", func() {
 		BeforeEach(func() {
-			lrps = []opi.LRP{
+			lrps = []*opi.LRP{
 				createLRP("odin", "1234.5"),
 				createLRP("thor", "4567.8"),
 				createLRP("mimir", "9012.3"),
@@ -84,7 +84,7 @@ var _ = Describe("Service", func() {
 
 		JustBeforeEach(func() {
 			for _, l := range lrps {
-				fakeClient.CoreV1().Services(namespace).Create(toService(&l, namespace))
+				fakeClient.CoreV1().Services(namespace).Create(toService(l, namespace))
 			}
 		})
 

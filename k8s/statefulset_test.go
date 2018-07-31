@@ -22,7 +22,7 @@ var _ = Describe("Statefulset", func() {
 		err                error
 		client             kubernetes.Interface
 		statefulSetManager InstanceManager
-		lrps               []opi.LRP
+		lrps               []*opi.LRP
 	)
 
 	const (
@@ -79,7 +79,7 @@ var _ = Describe("Statefulset", func() {
 	}
 
 	BeforeEach(func() {
-		lrps = []opi.LRP{
+		lrps = []*opi.LRP{
 			createLRP("odin", "1234.5"),
 			createLRP("thor", "4567.8"),
 			createLRP("mimir", "9012.3"),
@@ -102,20 +102,20 @@ var _ = Describe("Statefulset", func() {
 		}
 
 		for _, l := range lrps {
-			client.AppsV1beta2().StatefulSets(namespace).Create(toStatefulSet(&l, namespace))
+			client.AppsV1beta2().StatefulSets(namespace).Create(toStatefulSet(l, namespace))
 		}
 
 		statefulSetManager = NewStatefulsetManager(client, namespace)
 	})
 
 	Context("When creating an LRP", func() {
-		var lrp opi.LRP
+		var lrp *opi.LRP
 
 		JustBeforeEach(func() {
 			lrp = createLRP("Baldur", "1234.5")
 			lrps = append(lrps, lrp)
 
-			err = statefulSetManager.Create(&lrp)
+			err = statefulSetManager.Create(lrp)
 		})
 
 		It("should not fail", func() {
@@ -126,7 +126,7 @@ var _ = Describe("Statefulset", func() {
 			statefulSet, err := client.AppsV1beta2().StatefulSets(namespace).Get("Baldur", meta.GetOptions{})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(statefulSet).To(Equal(toStatefulSet(&lrp, namespace)))
+			Expect(statefulSet).To(Equal(toStatefulSet(lrp, namespace)))
 		})
 
 		Context("When redeploying an existing LRP", func() {
@@ -154,7 +154,7 @@ var _ = Describe("Statefulset", func() {
 		})
 
 		It("return the expected LRP", func() {
-			Expect(lrps).To(ContainElement(*lrp))
+			Expect(lrps).To(ContainElement(lrp))
 		})
 
 		Context("when the app does not exist", func() {
@@ -215,18 +215,16 @@ var _ = Describe("Statefulset", func() {
 		Context("when the app exists", func() {
 
 			var (
-				appName  string
-				replicas int32
+				appName string
 			)
 
 			BeforeEach(func() {
 				appName = "update"
-				replicas = int32(2)
 
 				lrp := createLRP("update", "7653.2")
 				lrps = append(lrps, lrp)
 
-				statefulSet := toStatefulSet(&lrp, namespace)
+				statefulSet := toStatefulSet(lrp, namespace)
 				_, err := client.AppsV1beta2().StatefulSets(namespace).Create(statefulSet)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -308,7 +306,7 @@ var _ = Describe("Statefulset", func() {
 		Context("When no statefulSets exist", func() {
 
 			BeforeEach(func() {
-				lrps = []opi.LRP{}
+				lrps = []*opi.LRP{}
 			})
 
 			It("returns an empy list of LRPs", func() {
@@ -418,8 +416,8 @@ func toStatefulSet(lrp *opi.LRP, namespace string) *v1beta2.StatefulSet {
 	return statefulSet
 }
 
-func createLRP(processGUID, lastUpdated string) opi.LRP {
-	return opi.LRP{
+func createLRP(processGUID, lastUpdated string) *opi.LRP {
+	return &opi.LRP{
 		Name: processGUID,
 		Command: []string{
 			"/bin/sh",

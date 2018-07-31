@@ -25,7 +25,7 @@ var _ = Describe("Deployment", func() {
 		err               error
 		client            kubernetes.Interface
 		deploymentManager InstanceManager
-		lrps              []opi.LRP
+		lrps              []*opi.LRP
 	)
 
 	const (
@@ -95,7 +95,7 @@ var _ = Describe("Deployment", func() {
 	}
 
 	BeforeEach(func() {
-		lrps = []opi.LRP{
+		lrps = []*opi.LRP{
 			createLRP("odin", "1234.5"),
 			createLRP("thor", "4567.8"),
 			createLRP("mimir", "9012.3"),
@@ -120,20 +120,20 @@ var _ = Describe("Deployment", func() {
 		}
 
 		for _, l := range lrps {
-			client.AppsV1beta1().Deployments(namespace).Create(toDeployment(&l, namespace))
+			client.AppsV1beta1().Deployments(namespace).Create(toDeployment(l, namespace))
 		}
 
 		deploymentManager = NewDeploymentManager(namespace, client)
 	})
 
 	Context("When creating an LRP", func() {
-		var lrp opi.LRP
+		var lrp *opi.LRP
 
 		JustBeforeEach(func() {
 			lrp = createLRP("Baldur", "1234.5")
 			lrps = append(lrps, lrp)
 
-			err = deploymentManager.Create(&lrp)
+			err = deploymentManager.Create(lrp)
 		})
 
 		It("should not fail", func() {
@@ -144,7 +144,7 @@ var _ = Describe("Deployment", func() {
 			deployment, err := client.AppsV1beta1().Deployments(namespace).Get("Baldur", av1.GetOptions{})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(deployment).To(Equal(toDeployment(&lrp, namespace)))
+			Expect(deployment).To(Equal(toDeployment(lrp, namespace)))
 		})
 
 		Context("When redeploying an existing LRP", func() {
@@ -171,7 +171,7 @@ var _ = Describe("Deployment", func() {
 			Context("When no deployments exist", func() {
 
 				BeforeEach(func() {
-					lrps = []opi.LRP{}
+					lrps = []*opi.LRP{}
 				})
 
 				It("returns an empy list of LRPs", func() {

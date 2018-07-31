@@ -139,12 +139,12 @@ var _ = Describe("Desire", func() {
 		Context("When listing actual LRPs", func() {
 			var (
 				err        error
-				actualLRPs []opi.LRP
-				lrps       []opi.LRP
+				actualLRPs []*opi.LRP
+				lrps       []*opi.LRP
 			)
 
 			BeforeEach(func() {
-				lrps = []opi.LRP{opi.LRP{Name: "app1"}, opi.LRP{Name: "app2"}}
+				lrps = []*opi.LRP{&opi.LRP{Name: "app1"}, &opi.LRP{Name: "app2"}}
 				instanceManager.ListReturns(lrps, nil)
 			})
 

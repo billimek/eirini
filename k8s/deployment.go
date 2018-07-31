@@ -31,7 +31,7 @@ func (m *deploymentManager) Create(lrp *opi.LRP) error {
 	return err
 }
 
-func (m *deploymentManager) List() ([]opi.LRP, error) {
+func (m *deploymentManager) List() ([]*opi.LRP, error) {
 	deployments, err := m.deployments().List(av1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -59,10 +59,10 @@ func (m *deploymentManager) Get(appName string) (*opi.LRP, error) {
 	return nil, nil
 }
 
-func deploymentsToLRPs(deployments *v1beta1.DeploymentList) []opi.LRP {
-	lrps := []opi.LRP{}
+func deploymentsToLRPs(deployments *v1beta1.DeploymentList) []*opi.LRP {
+	lrps := []*opi.LRP{}
 	for _, d := range deployments.Items {
-		lrp := opi.LRP{
+		lrp := &opi.LRP{
 			Name:    d.Name,
 			Command: d.Spec.Template.Spec.Containers[0].Command,
 			Image:   d.Spec.Template.Spec.Containers[0].Image,

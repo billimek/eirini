@@ -24,7 +24,7 @@ func NewStatefulsetManager(client kubernetes.Interface, namespace string) Instan
 	}
 }
 
-func (m *statefulSetManager) List() ([]opi.LRP, error) {
+func (m *statefulSetManager) List() ([]*opi.LRP, error) {
 	statefulsets, err := m.statefulSets().List(meta.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -84,11 +84,11 @@ func (m *statefulSetManager) statefulSets() types.StatefulSetInterface {
 	return m.client.AppsV1beta2().StatefulSets(m.namespace)
 }
 
-func statefulSetsToLRPs(statefulSets *v1beta2.StatefulSetList) []opi.LRP {
-	lrps := []opi.LRP{}
+func statefulSetsToLRPs(statefulSets *v1beta2.StatefulSetList) []*opi.LRP {
+	lrps := []*opi.LRP{}
 	for _, s := range statefulSets.Items {
 		lrp := statefulSetToLRP(&s)
-		lrps = append(lrps, *lrp)
+		lrps = append(lrps, lrp)
 	}
 	return lrps
 }
