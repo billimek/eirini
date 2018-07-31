@@ -13,6 +13,8 @@ type Desirer struct {
 	serviceManager  ServiceManager
 }
 
+type InstanceOptionFunc func(string, kubernetes.Interface) InstanceManager
+
 //go:generate counterfeiter . InstanceManager
 type InstanceManager interface {
 	List() ([]*opi.LRP, error)
@@ -31,6 +33,14 @@ func NewDesirer(kubeNamespace string, instanceManager InstanceManager, ingressMa
 		ingressManager:  ingressManager,
 		serviceManager:  serviceManager,
 	}
+}
+
+func NewInstanceManager(client kubernetes.Interface, namespace string, option InstanceOptionFunc) InstanceManager {
+	return option(namespace, client)
+}
+
+func UseStatefulSets(namespace string, client kubernetes.Interface) InstanceManager {
+	return NewStatefulSetManager(client, namespace)
 }
 
 func (d *Desirer) Desire(lrp *opi.LRP) error {
