@@ -1,7 +1,6 @@
 package k8s_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 var _ = Describe("Statefulset", func() {
@@ -47,13 +45,13 @@ var _ = Describe("Statefulset", func() {
 		}
 	}
 
-	//getLRPNames := func() []string {
-	//	names := []string{}
-	//	for _, lrp := range lrps {
-	//		names = append(names, lrp.Metadata[cf.ProcessGUID])
-	//	}
-	//	return names
-	//}
+	getLRPNames := func() []string {
+		names := []string{}
+		for _, lrp := range lrps {
+			names = append(names, lrp.Metadata[cf.ProcessGUID])
+		}
+		return names
+	}
 
 	listStatefulSets := func() []v1beta2.StatefulSet {
 		list, err := client.AppsV1beta2().StatefulSets(namespace).List(meta.ListOptions{})
@@ -75,10 +73,10 @@ var _ = Describe("Statefulset", func() {
 		return replicasets.Items
 	}
 
-	//cleanupStatefulSet := func(appName string) {
-	//	backgroundPropagation := meta.DeletePropagationBackground
-	//	client.AppsV1beta2().StatefulSets(namespace).Delete(appName, &meta.DeleteOptions{PropagationPolicy: &backgroundPropagation})
-	//}
+	cleanupStatefulSet := func(appName string) {
+		backgroundPropagation := meta.DeletePropagationBackground
+		client.AppsV1beta2().StatefulSets(namespace).Delete(appName, &meta.DeleteOptions{PropagationPolicy: &backgroundPropagation})
+	}
 
 	BeforeEach(func() {
 		lrps = []opi.LRP{
@@ -87,21 +85,21 @@ var _ = Describe("Statefulset", func() {
 			createLRP("mimir", "9012.3"),
 		}
 
+	})
+
+	AfterEach(func() {
+		for _, appName := range getLRPNames() {
+			cleanupStatefulSet(appName)
+		}
+
+		Eventually(listStatefulSets, timeout).Should(BeEmpty())
+	})
+
+	JustBeforeEach(func() {
 		client = fake.NewSimpleClientset()
 		if !namespaceExists(namespace) {
 			createNamespace(namespace)
 		}
-	})
-
-	AfterEach(func() {
-		//for _, appName := range getLRPNames() {
-		//cleanupStatefulSet(appName)
-		//}
-
-		//Eventually(listStatefulSets, timeout).Should(BeEmpty())
-	})
-
-	JustBeforeEach(func() {
 
 		for _, l := range lrps {
 			client.AppsV1beta2().StatefulSets(namespace).Create(toStatefulSet(&l, namespace))
@@ -357,30 +355,6 @@ var _ = Describe("Statefulset", func() {
 			})
 		})
 	})
-
-	FContext("Read Test", func() {
-
-		It("deploys a statefulset", func() {
-			config, err := clientcmd.BuildConfigFromFlags("", "/Users/Skupnjak/.bluemix/plugins/container-service/clusters/cube-kube/kube-config-lon04-cube-kube.yml")
-			if err != nil {
-				panic(err.Error())
-			}
-
-			client, err = kubernetes.NewForConfig(config)
-			if err != nil {
-				panic(err.Error())
-			}
-
-			//statefulSetManager = NewStatefulsetManager(client, "testing")
-			//err = statefulSetManager.Create(&lrps[0])
-			lrp := lrps[0]
-			created, err := client.AppsV1beta2().StatefulSets(namespace).Create(toStatefulSet(&lrp, namespace))
-			Expect(err).ToNot(HaveOccurred())
-			result, err := json.Marshal(&created)
-			Expect(err).ToNot(HaveOccurred())
-			fmt.Println(string(result))
-		})
-	})
 })
 
 func getStatefulSetNames(statefulSets []v1beta2.StatefulSet) []string {
@@ -428,8 +402,7 @@ func toStatefulSet(lrp *opi.LRP, namespace string) *v1beta2.StatefulSet {
 	}
 
 	statefulSet.Name = lrp.Name
-	statefulSet.APIVersion = "apps/v1beta2"
-	statefulSet.Kind = "StatefulSet"
+
 	statefulSet.Namespace = namespace
 	statefulSet.Spec.Template.Labels = map[string]string{
 		"name": lrp.Name,
@@ -440,12 +413,6 @@ func toStatefulSet(lrp *opi.LRP, namespace string) *v1beta2.StatefulSet {
 		"name":   lrp.Name,
 	}
 
-	statefulSet.Spec.Selector = &meta.LabelSelector{
-		MatchLabels: map[string]string{
-			"name": lrp.Name,
-		},
-	}
-
 	statefulSet.Annotations = lrp.Metadata
 
 	return statefulSet
@@ -453,10 +420,13 @@ func toStatefulSet(lrp *opi.LRP, namespace string) *v1beta2.StatefulSet {
 
 func createLRP(processGUID, lastUpdated string) opi.LRP {
 	return opi.LRP{
-		Name:            processGUID,
-		Command:         []string{"/bin/sh", "-c", "while true; do echo hello; sleep 10;done"},
-		Image:           "busybox",
-		TargetInstances: 1,
+		Name: processGUID,
+		Command: []string{
+			"/bin/sh",
+			"-c",
+			"while true; do echo hello; sleep 10;done",
+		},
+		Image: "busybox",
 		Metadata: map[string]string{
 			cf.ProcessGUID: processGUID,
 			cf.LastUpdated: lastUpdated,

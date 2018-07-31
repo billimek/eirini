@@ -96,6 +96,7 @@ func statefulSetsToLRPs(statefulSets *v1beta2.StatefulSetList) []opi.LRP {
 func statefulSetToLRP(s *v1beta2.StatefulSet) *opi.LRP {
 	return &opi.LRP{
 		Name:    s.Name,
+		Image:   s.Spec.Template.Spec.Containers[0].Image,
 		Command: s.Spec.Template.Spec.Containers[0].Command,
 		Metadata: map[string]string{
 			cf.ProcessGUID: s.Annotations[cf.ProcessGUID],
@@ -125,7 +126,7 @@ func toStatefulSet(lrp *opi.LRP) *v1beta2.StatefulSet {
 							Name:    "opi",
 							Image:   lrp.Image,
 							Command: lrp.Command,
-							Env:     MapToEnvVar(lrp.Env),
+							Env:     envs,
 							Ports: []v1.ContainerPort{
 								v1.ContainerPort{
 									Name:          "expose",
@@ -147,12 +148,6 @@ func toStatefulSet(lrp *opi.LRP) *v1beta2.StatefulSet {
 	statefulSet.Labels = map[string]string{
 		"eirini": "eirini",
 		"name":   lrp.Name,
-	}
-
-	statefulSet.Spec.Selector = &meta.LabelSelector{
-		MatchLabels: map[string]string{
-			"name": lrp.Name,
-		},
 	}
 
 	statefulSet.Annotations = lrp.Metadata

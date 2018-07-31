@@ -65,6 +65,7 @@ func deploymentsToLRPs(deployments *v1beta1.DeploymentList) []opi.LRP {
 		lrp := opi.LRP{
 			Name:    d.Name,
 			Command: d.Spec.Template.Spec.Containers[0].Command,
+			Image:   d.Spec.Template.Spec.Containers[0].Image,
 			Metadata: map[string]string{
 				cf.ProcessGUID: d.Annotations[cf.ProcessGUID],
 				cf.LastUpdated: d.Annotations[cf.LastUpdated],
