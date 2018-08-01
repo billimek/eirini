@@ -8,12 +8,17 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/api/apps/v1beta2"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("Instance", func() {
+var _ = Describe("Instance {SYSTEM}", func() {
 
-	var instanceManager k8s.InstanceManager
+	var (
+		instanceManager k8s.InstanceManager
+		lrp             *opi.LRP
+		err             error
+	)
 
 	cleanupStatefulSet := func(appName string) {
 		backgroundPropagation := metav1.DeletePropagationBackground
@@ -26,6 +31,15 @@ var _ = Describe("Instance", func() {
 		return list.Items
 	}
 
+	BeforeEach(func() {
+		lrp = createLRP("odin")
+	})
+
+	AfterEach(func() {
+		cleanupStatefulSet(lrp.Name)
+		Eventually(listStatefulSets, timeout).Should(BeEmpty())
+	})
+
 	JustBeforeEach(func() {
 		instanceManager = k8s.NewInstanceManager(
 			clientset,
@@ -35,28 +49,43 @@ var _ = Describe("Instance", func() {
 	})
 
 	Context("When creating an LRP", func() {
-		var lrp *opi.LRP
-
-		BeforeEach(func() {
-			lrp = createLRP("odin")
+		JustBeforeEach(func() {
+			err = instanceManager.Create(lrp)
 		})
 
-		AfterEach(func() {
-			cleanupStatefulSet(lrp.Name)
-			Eventually(listStatefulSets, timeout).Should(BeEmpty())
+		It("should not fail", func() {
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should create an StatefulSet with an associated pod", func() {
-			err := instanceManager.Create(lrp)
-			Expect(err).ToNot(HaveOccurred())
-
+			var pod *v1.Pod
 			Eventually(func() error {
-				_, err = clientset.CoreV1().Pods(namespace).Get(
-					lrp.Name+"-0",
+				pod, err = clientset.CoreV1().Pods(namespace).Get(
+					"odin-0",
 					metav1.GetOptions{},
 				)
 				return err
 			}, timeout).ShouldNot(HaveOccurred())
+			Expect(pod.Name).To(Equal("odin-0"))
+		})
+	})
+
+	Context("When deleting an LRP", func() {
+
+		JustBeforeEach(func() {
+			err = instanceManager.Create(lrp)
+		})
+
+		It("should not fail", func() {
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should delete the StatefulSet and the associated pod", func() {
+			Eventually(func() []v1.Pod {
+				list, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+				Expect(err).ToNot(HaveOccurred())
+				return list.Items
+			}, timeout).Should(BeEmpty())
 		})
 	})
 })

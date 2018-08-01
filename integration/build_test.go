@@ -14,7 +14,7 @@ import (
 	"code.cloudfoundry.org/eirini"
 )
 
-var _ = Describe("Build", func() {
+var _ = Describe("Build {SYSTEM}", func() {
 	Context("When building OPI", func() {
 		var (
 			opiPath    string
