@@ -25,6 +25,7 @@ var (
 	opiConfigPath string
 )
 
+// nolint
 var _ = BeforeSuite(func() {
 	namespace = "opi-integration"
 	config, err := clientcmd.BuildConfigFromFlags("",

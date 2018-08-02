@@ -20,6 +20,7 @@ var _ = Describe("Instance {SYSTEM}", func() {
 		err             error
 	)
 
+	// nolint
 	cleanupStatefulSet := func(appName string) {
 		backgroundPropagation := metav1.DeletePropagationBackground
 		clientset.AppsV1beta2().StatefulSets(namespace).Delete(appName, &metav1.DeleteOptions{PropagationPolicy: &backgroundPropagation})
