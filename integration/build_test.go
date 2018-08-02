@@ -2,8 +2,11 @@ package integration_test
 
 import (
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,7 +18,7 @@ import (
 	"code.cloudfoundry.org/eirini"
 )
 
-var _ = FDescribe("Build {SYSTEM}", func() {
+var _ = Describe("Build {SYSTEM}", func() {
 	Context("When building OPI", func() {
 		var (
 			opiPath   string
@@ -61,10 +64,20 @@ var _ = FDescribe("Build {SYSTEM}", func() {
 			})
 		})
 
-		FContext("Using a valid opi ocnfig file", func() {
-			It("should run opi connect", func() {
-				Eventually(session).Should(gbytes.Say("connected"))
+		FContext("Using a valid opi config file", func() {
+			FIt("should print connected string", func() {
+				Eventually(session.Err, 5*time.Second).Should(gbytes.Say(".*opi connected"))
 			})
+
+			It("should run the opi process", func() {
+				pid := session.Command.Process.Pid
+				process, err := os.FindProcess(int(pid))
+				Expect(err).ToNot(HaveOccurred())
+				err = process.Signal(syscall.Signal(0))
+				Expect(err).ToNot(HaveOccurred())
+
+			})
+
 		})
 	})
 })
