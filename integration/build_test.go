@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
 	yaml "gopkg.in/yaml.v2"
@@ -14,16 +15,15 @@ import (
 	"code.cloudfoundry.org/eirini"
 )
 
-var _ = Describe("Build {SYSTEM}", func() {
+var _ = FDescribe("Build {SYSTEM}", func() {
 	Context("When building OPI", func() {
 		var (
-			opiPath    string
-			err        error
-			opiConfig  eirini.Config
-			tmpDir     string
-			config     []byte
-			configPath string
-			session    *gexec.Session
+			opiPath   string
+			err       error
+			opiConfig eirini.Config
+			tmpDir    string
+			config    []byte
+			session   *gexec.Session
 		)
 
 		BeforeEach(func() {
@@ -31,8 +31,12 @@ var _ = Describe("Build {SYSTEM}", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		AfterEach(func() {
+			session.Terminate()
+		})
+
 		JustBeforeEach(func() {
-			cmd := exec.Command(opiPath, "connect", "--config", configPath)
+			cmd := exec.Command(opiPath, "connect", "--config", opiConfigPath)
 			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -46,14 +50,20 @@ var _ = Describe("Build {SYSTEM}", func() {
 				tmpDir, err = ioutil.TempDir("", "opi-tmp-dir")
 				Expect(err).NotTo(HaveOccurred())
 
-				configPath = filepath.Join(tmpDir, "opi.yml")
-				err = ioutil.WriteFile(configPath, config, 0644)
+				opiConfigPath = filepath.Join(tmpDir, "opi.yml")
+				err = ioutil.WriteFile(opiConfigPath, config, 0644)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("should exit with a non-zero code", func() {
 				<-session.Exited
 				Expect(session.ExitCode()).ToNot(Equal(0))
+			})
+		})
+
+		FContext("Using a valid opi ocnfig file", func() {
+			It("should run opi connect", func() {
+				Eventually(session).Should(gbytes.Say("connected"))
 			})
 		})
 	})
