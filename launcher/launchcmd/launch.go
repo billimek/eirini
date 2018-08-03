@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"syscall"
 )
 
@@ -20,24 +19,8 @@ func main() {
 	}
 
 	args := []string{"/lifecycle/launcher", "/home/vcap/app", command, ""}
-
-	instanceIndex := parsePodIndex()
-	err := os.Setenv("INSTANCE_INDEX", instanceIndex)
-	err = os.Setenv("CF_INSTANCE_INDEX", instanceIndex)
-	check(err, "setting instance index env var")
-
-	fmt.Println("Instance Index parsed. OS ENV:", os.Environ())
-	err = syscall.Exec("/lifecycle/launcher", args, os.Environ())
+	err := syscall.Exec("/lifecycle/launcher", args, os.Environ())
 	check(err, "execute launcher")
-}
-
-func parsePodIndex() string {
-	sl := strings.Split(os.Getenv("POD_NAME"), "-")
-	if len(sl) == 0 {
-		return ""
-	}
-
-	return sl[len(sl)-1]
 }
 
 func readCommand(path string) string {
