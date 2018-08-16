@@ -360,6 +360,17 @@ func toStatefulSet(lrp *opi.LRP, namespace string) *v1beta2.StatefulSet {
 		},
 	})
 
+	livenessProbe := &v1.Probe{
+		v1.Handler{
+			HTTPGet: &v1.HTTPGetAction{
+				Path: "/",
+				Port: 8080,
+			},
+		},
+		InitialDelaySeconds: 3,
+		periodSeconds:       2,
+	}
+
 	targetInstances := int32(lrp.TargetInstances)
 	statefulSet := &v1beta2.StatefulSet{
 		Spec: v1beta2.StatefulSetSpec{
@@ -378,6 +389,7 @@ func toStatefulSet(lrp *opi.LRP, namespace string) *v1beta2.StatefulSet {
 									ContainerPort: 8080,
 								},
 							},
+							LivenessProbe: livenessProbe,
 						},
 					},
 				},

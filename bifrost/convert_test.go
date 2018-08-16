@@ -134,6 +134,16 @@ var _ = Describe("Convert CC DesiredApp into an opi LRP", func() {
 			})
 		})
 
+		Context("When healthcheck information is provided", func() {
+			BeforeEach(func() {
+				desireLRPRequest.HealthCheckHTTPEndpoint = "/health"
+			})
+
+			It("should be part of the meta information of the LRP", func() {
+				Expect(lrp.Metadata["HealthCheckPath"]).To(Equal("/health"))
+			})
+		})
+
 	})
 
 	Context("When the request fails to be converted", func() {
