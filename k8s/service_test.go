@@ -14,7 +14,7 @@ import (
 	. "code.cloudfoundry.org/eirini/k8s"
 )
 
-var _ = Describe("Service", func() {
+var _ = FDescribe("Service", func() {
 
 	var (
 		fakeClient     kubernetes.Interface
@@ -147,6 +147,7 @@ var _ = Describe("Service", func() {
 				service = toService(lrp, namespace)
 				_, err = fakeClient.CoreV1().Services(namespace).Create(service)
 				Expect(err).ToNot(HaveOccurred())
+
 			})
 
 			JustBeforeEach(func() {
