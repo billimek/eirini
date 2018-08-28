@@ -147,11 +147,11 @@ var _ = FDescribe("Service", func() {
 				service = toService(lrp, namespace)
 				_, err = fakeClient.CoreV1().Services(namespace).Create(service)
 				Expect(err).ToNot(HaveOccurred())
-
 			})
 
 			JustBeforeEach(func() {
 				err = serviceManager.Delete("odin")
+				routesChan <- []*eirini.Routes{{}}
 			})
 
 			It("should not return an error", func() {
