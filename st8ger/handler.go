@@ -18,9 +18,9 @@ func New(stager eirini.St8ger, backend eirini.Backend, logger lager.Logger) http
 
 	stagingHandler := NewStagingHandler(stager, backend, logger)
 
-	handler.PUT("/v1/staging/:staging_guid", stagingHandler.Stage)
-	handler.POST("/v1/staging/:staging_guid/completed", stagingHandler.StagingComplete)
-	handler.DELETE("/v1/staging/:staging_guid", stagingHandler.StopStaging)
+	handler.PUT("/stage/:staging_guid", stagingHandler.Stage)
+	handler.POST("/stage/:staging_guid/completed", stagingHandler.StagingComplete)
+	handler.DELETE("/stage/:staging_guid", stagingHandler.StopStaging)
 
 	return handler
 }

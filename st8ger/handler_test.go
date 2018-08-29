@@ -48,7 +48,7 @@ var _ = Describe("Handler", func() {
 		Context("When it receives a staging request", func() {
 
 			It("returns an Accepted response", func() {
-				req, err := http.NewRequest("PUT", ts.URL+"/v1/staging/myguid", bytes.NewReader([]byte(stagingRequestJSON)))
+				req, err := http.NewRequest("PUT", ts.URL+"/stage/myguid", bytes.NewReader([]byte(stagingRequestJSON)))
 				Expect(err).ToNot(HaveOccurred())
 				res, err := client.Do(req)
 				Expect(err).ToNot(HaveOccurred())
@@ -59,23 +59,23 @@ var _ = Describe("Handler", func() {
 
 		Context("When a wrong request is made", func() {
 			It("returns a BadRequest response", func() {
-				req, err := http.NewRequest("PUT", ts.URL+"/v1/staging/myguid", bytes.NewReader([]byte{}))
+				req, err := http.NewRequest("PUT", ts.URL+"/stage/myguid", bytes.NewReader([]byte{}))
 				Expect(err).ToNot(HaveOccurred())
 				res, err := client.Do(req)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(res.StatusCode).To(Equal(http.StatusBadRequest))
 			})
 		})
-		It("Serves the DELETE /v1/staging/:staging_guid endpoint", func() {
-			req, err := http.NewRequest("DELETE", ts.URL+"/v1/staging/myguid", nil)
+		It("Serves the DELETE /stage/:staging_guid endpoint", func() {
+			req, err := http.NewRequest("DELETE", ts.URL+"/stage/myguid", nil)
 			Expect(err).ToNot(HaveOccurred())
 			res, err := client.Do(req)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.StatusCode).To(Equal(200))
 		})
 
-		It("Serves the POST /v1/staging/:staging_guid/completed endpoint", func() {
-			_, err := http.Post(ts.URL+"/v1/staging/myguid/completed", "nothing", nil)
+		It("Serves the POST /stage/commpleted endpoint", func() {
+			_, err := http.Post(ts.URL+"/stage/myguid/completed", "nothing", nil)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -88,7 +88,7 @@ var _ = Describe("Handler", func() {
 		)
 
 		BeforeEach(func() {
-			req, err = http.NewRequest("PUT", "/v1/staging/myguid", bytes.NewReader([]byte(stagingRequestJSON)))
+			req, err = http.NewRequest("PUT", "/stage/myguid", bytes.NewReader([]byte(stagingRequestJSON)))
 			Expect(err).ToNot(HaveOccurred())
 		})
 
