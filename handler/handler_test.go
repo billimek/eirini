@@ -20,14 +20,16 @@ var _ = Describe("Handler", func() {
 		ts            *httptest.Server
 		client        *http.Client
 		bifrost       *eirinifakes.FakeBifrost
+		stager        *eirinifakes.FakeStager
 		handlerClient http.Handler
 	)
 
 	BeforeEach(func() {
 		client = &http.Client{}
 		bifrost = new(eirinifakes.FakeBifrost)
+		stager = new(eirinifakes.FakeStager)
 		lager := lagertest.NewTestLogger("handler-test")
-		handlerClient = New(bifrost, lager)
+		handlerClient = New(bifrost, stager, lager)
 	})
 
 	JustBeforeEach(func() {

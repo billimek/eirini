@@ -7,7 +7,6 @@ import (
 
 	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/eirini/models/cf"
-	"code.cloudfoundry.org/eirini/opi"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 )
 
@@ -65,14 +64,9 @@ type Routes struct {
 	Name               string
 }
 
-//go:generate counterfeiter . St8ger
-type St8ger interface {
-	Run(task opi.Task) error
-}
-
-//go:generate counterfeiter . Backend
-type Backend interface {
-	CreateStagingTask(string, cc_messages.StagingRequestFromCC) (opi.Task, error)
+//go:generate counterfeiter . Stager
+type Stager interface {
+	DesireTask(string, cc_messages.StagingRequestFromCC) error
 	BuildStagingResponse(*models.TaskCallbackResponse) (cc_messages.StagingResponseForCC, error)
 }
 

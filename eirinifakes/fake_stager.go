@@ -6,24 +6,21 @@ import (
 
 	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/eirini"
-	"code.cloudfoundry.org/eirini/opi"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 )
 
-type FakeBackend struct {
-	CreateStagingTaskStub        func(string, cc_messages.StagingRequestFromCC) (opi.Task, error)
-	createStagingTaskMutex       sync.RWMutex
-	createStagingTaskArgsForCall []struct {
+type FakeStager struct {
+	DesireTaskStub        func(string, cc_messages.StagingRequestFromCC) error
+	desireTaskMutex       sync.RWMutex
+	desireTaskArgsForCall []struct {
 		arg1 string
 		arg2 cc_messages.StagingRequestFromCC
 	}
-	createStagingTaskReturns struct {
-		result1 opi.Task
-		result2 error
+	desireTaskReturns struct {
+		result1 error
 	}
-	createStagingTaskReturnsOnCall map[int]struct {
-		result1 opi.Task
-		result2 error
+	desireTaskReturnsOnCall map[int]struct {
+		result1 error
 	}
 	BuildStagingResponseStub        func(*models.TaskCallbackResponse) (cc_messages.StagingResponseForCC, error)
 	buildStagingResponseMutex       sync.RWMutex
@@ -42,59 +39,56 @@ type FakeBackend struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeBackend) CreateStagingTask(arg1 string, arg2 cc_messages.StagingRequestFromCC) (opi.Task, error) {
-	fake.createStagingTaskMutex.Lock()
-	ret, specificReturn := fake.createStagingTaskReturnsOnCall[len(fake.createStagingTaskArgsForCall)]
-	fake.createStagingTaskArgsForCall = append(fake.createStagingTaskArgsForCall, struct {
+func (fake *FakeStager) DesireTask(arg1 string, arg2 cc_messages.StagingRequestFromCC) error {
+	fake.desireTaskMutex.Lock()
+	ret, specificReturn := fake.desireTaskReturnsOnCall[len(fake.desireTaskArgsForCall)]
+	fake.desireTaskArgsForCall = append(fake.desireTaskArgsForCall, struct {
 		arg1 string
 		arg2 cc_messages.StagingRequestFromCC
 	}{arg1, arg2})
-	fake.recordInvocation("CreateStagingTask", []interface{}{arg1, arg2})
-	fake.createStagingTaskMutex.Unlock()
-	if fake.CreateStagingTaskStub != nil {
-		return fake.CreateStagingTaskStub(arg1, arg2)
+	fake.recordInvocation("DesireTask", []interface{}{arg1, arg2})
+	fake.desireTaskMutex.Unlock()
+	if fake.DesireTaskStub != nil {
+		return fake.DesireTaskStub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fake.createStagingTaskReturns.result1, fake.createStagingTaskReturns.result2
+	return fake.desireTaskReturns.result1
 }
 
-func (fake *FakeBackend) CreateStagingTaskCallCount() int {
-	fake.createStagingTaskMutex.RLock()
-	defer fake.createStagingTaskMutex.RUnlock()
-	return len(fake.createStagingTaskArgsForCall)
+func (fake *FakeStager) DesireTaskCallCount() int {
+	fake.desireTaskMutex.RLock()
+	defer fake.desireTaskMutex.RUnlock()
+	return len(fake.desireTaskArgsForCall)
 }
 
-func (fake *FakeBackend) CreateStagingTaskArgsForCall(i int) (string, cc_messages.StagingRequestFromCC) {
-	fake.createStagingTaskMutex.RLock()
-	defer fake.createStagingTaskMutex.RUnlock()
-	return fake.createStagingTaskArgsForCall[i].arg1, fake.createStagingTaskArgsForCall[i].arg2
+func (fake *FakeStager) DesireTaskArgsForCall(i int) (string, cc_messages.StagingRequestFromCC) {
+	fake.desireTaskMutex.RLock()
+	defer fake.desireTaskMutex.RUnlock()
+	return fake.desireTaskArgsForCall[i].arg1, fake.desireTaskArgsForCall[i].arg2
 }
 
-func (fake *FakeBackend) CreateStagingTaskReturns(result1 opi.Task, result2 error) {
-	fake.CreateStagingTaskStub = nil
-	fake.createStagingTaskReturns = struct {
-		result1 opi.Task
-		result2 error
-	}{result1, result2}
+func (fake *FakeStager) DesireTaskReturns(result1 error) {
+	fake.DesireTaskStub = nil
+	fake.desireTaskReturns = struct {
+		result1 error
+	}{result1}
 }
 
-func (fake *FakeBackend) CreateStagingTaskReturnsOnCall(i int, result1 opi.Task, result2 error) {
-	fake.CreateStagingTaskStub = nil
-	if fake.createStagingTaskReturnsOnCall == nil {
-		fake.createStagingTaskReturnsOnCall = make(map[int]struct {
-			result1 opi.Task
-			result2 error
+func (fake *FakeStager) DesireTaskReturnsOnCall(i int, result1 error) {
+	fake.DesireTaskStub = nil
+	if fake.desireTaskReturnsOnCall == nil {
+		fake.desireTaskReturnsOnCall = make(map[int]struct {
+			result1 error
 		})
 	}
-	fake.createStagingTaskReturnsOnCall[i] = struct {
-		result1 opi.Task
-		result2 error
-	}{result1, result2}
+	fake.desireTaskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
-func (fake *FakeBackend) BuildStagingResponse(arg1 *models.TaskCallbackResponse) (cc_messages.StagingResponseForCC, error) {
+func (fake *FakeStager) BuildStagingResponse(arg1 *models.TaskCallbackResponse) (cc_messages.StagingResponseForCC, error) {
 	fake.buildStagingResponseMutex.Lock()
 	ret, specificReturn := fake.buildStagingResponseReturnsOnCall[len(fake.buildStagingResponseArgsForCall)]
 	fake.buildStagingResponseArgsForCall = append(fake.buildStagingResponseArgsForCall, struct {
@@ -111,19 +105,19 @@ func (fake *FakeBackend) BuildStagingResponse(arg1 *models.TaskCallbackResponse)
 	return fake.buildStagingResponseReturns.result1, fake.buildStagingResponseReturns.result2
 }
 
-func (fake *FakeBackend) BuildStagingResponseCallCount() int {
+func (fake *FakeStager) BuildStagingResponseCallCount() int {
 	fake.buildStagingResponseMutex.RLock()
 	defer fake.buildStagingResponseMutex.RUnlock()
 	return len(fake.buildStagingResponseArgsForCall)
 }
 
-func (fake *FakeBackend) BuildStagingResponseArgsForCall(i int) *models.TaskCallbackResponse {
+func (fake *FakeStager) BuildStagingResponseArgsForCall(i int) *models.TaskCallbackResponse {
 	fake.buildStagingResponseMutex.RLock()
 	defer fake.buildStagingResponseMutex.RUnlock()
 	return fake.buildStagingResponseArgsForCall[i].arg1
 }
 
-func (fake *FakeBackend) BuildStagingResponseReturns(result1 cc_messages.StagingResponseForCC, result2 error) {
+func (fake *FakeStager) BuildStagingResponseReturns(result1 cc_messages.StagingResponseForCC, result2 error) {
 	fake.BuildStagingResponseStub = nil
 	fake.buildStagingResponseReturns = struct {
 		result1 cc_messages.StagingResponseForCC
@@ -131,7 +125,7 @@ func (fake *FakeBackend) BuildStagingResponseReturns(result1 cc_messages.Staging
 	}{result1, result2}
 }
 
-func (fake *FakeBackend) BuildStagingResponseReturnsOnCall(i int, result1 cc_messages.StagingResponseForCC, result2 error) {
+func (fake *FakeStager) BuildStagingResponseReturnsOnCall(i int, result1 cc_messages.StagingResponseForCC, result2 error) {
 	fake.BuildStagingResponseStub = nil
 	if fake.buildStagingResponseReturnsOnCall == nil {
 		fake.buildStagingResponseReturnsOnCall = make(map[int]struct {
@@ -145,11 +139,11 @@ func (fake *FakeBackend) BuildStagingResponseReturnsOnCall(i int, result1 cc_mes
 	}{result1, result2}
 }
 
-func (fake *FakeBackend) Invocations() map[string][][]interface{} {
+func (fake *FakeStager) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.createStagingTaskMutex.RLock()
-	defer fake.createStagingTaskMutex.RUnlock()
+	fake.desireTaskMutex.RLock()
+	defer fake.desireTaskMutex.RUnlock()
 	fake.buildStagingResponseMutex.RLock()
 	defer fake.buildStagingResponseMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
@@ -159,7 +153,7 @@ func (fake *FakeBackend) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *FakeBackend) recordInvocation(key string, args []interface{}) {
+func (fake *FakeStager) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -171,4 +165,4 @@ func (fake *FakeBackend) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ eirini.Backend = new(FakeBackend)
+var _ eirini.Stager = new(FakeStager)
