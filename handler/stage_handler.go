@@ -1,9 +1,7 @@
 package handler
 
 import (
-	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"code.cloudfoundry.org/bbs/models"
@@ -31,30 +29,14 @@ func (s *Stage) Stage(resp http.ResponseWriter, req *http.Request, ps httprouter
 	stagingGUID := ps.ByName("staging_guid")
 	logger := s.logger.Session("staging-request", lager.Data{"staging-guid": stagingGUID})
 
-	requestBody, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		logger.Error("read-body-failed", err)
-		resp.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	var stagingRequest cc_messages.StagingRequestFromCC
-	err = json.Unmarshal(requestBody, &stagingRequest)
-	if err != nil {
-		logger.Error("unmarshal-request-failed", err)
+	if err := json.NewDecoder(req.Body).Decode(&stagingRequest); err != nil {
+		s.logger.Error("staging-request-body-decoding-failed", err)
 		resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	envVars := []string{}
-	for _, envVar := range stagingRequest.Environment {
-		envVars = append(envVars, envVar.Name)
-	}
-
-	logger.Info("environment", lager.Data{"keys": envVars})
-
-	err = s.stager.DesireTask(stagingGUID, stagingRequest)
-	if err != nil {
+	if err := s.stager.Stage(stagingGUID, stagingRequest); err != nil {
 		logger.Error("stage-app-failed", err)
 		resp.WriteHeader(http.StatusInternalServerError)
 		return
@@ -75,40 +57,11 @@ func (s *Stage) StagingComplete(res http.ResponseWriter, req *http.Request, ps h
 		return
 	}
 
-	var annotation cc_messages.StagingTaskAnnotation
-	err = json.Unmarshal([]byte(task.Annotation), &annotation)
-	if err != nil {
-		res.WriteHeader(http.StatusBadRequest)
-		logger.Error("parsing-annotation-failed", err)
-		return
-	}
-
-	response, err := s.stager.BuildStagingResponse(task)
-	if err != nil {
+	if err = s.stager.CompleteStaging(task); err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
-		logger.Error("error-creating-staging-response", err)
+		logger.Error("staging-completion-failed", err)
 		return
 	}
 
-	responseJSON, err := json.Marshal(response)
-	if err != nil {
-		res.WriteHeader(http.StatusBadRequest)
-		logger.Error("get-staging-response-failed", err)
-		return
-	}
-
-	request, err := http.NewRequest("POST", annotation.CompletionCallback, bytes.NewBuffer(responseJSON))
-	if err != nil {
-		return
-	}
-
-	client := http.Client{}
-	resp, err := client.Do(request)
-	if err != nil {
-		logger.Error("cc-staging-complete-failed", err)
-		return
-	}
-
-	logger.Info("staging-complete-request-finished-with-status", lager.Data{"StatusCode": resp.StatusCode})
 	logger.Info("posted-staging-complete")
 }

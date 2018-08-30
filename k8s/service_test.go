@@ -14,7 +14,7 @@ import (
 	. "code.cloudfoundry.org/eirini/k8s"
 )
 
-var _ = FDescribe("Service", func() {
+var _ = Describe("Service", func() {
 
 	var (
 		fakeClient     kubernetes.Interface

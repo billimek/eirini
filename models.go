@@ -66,11 +66,11 @@ type Routes struct {
 
 //go:generate counterfeiter . Stager
 type Stager interface {
-	DesireTask(string, cc_messages.StagingRequestFromCC) error
-	BuildStagingResponse(*models.TaskCallbackResponse) (cc_messages.StagingResponseForCC, error)
+	Stage(string, cc_messages.StagingRequestFromCC) error //stage
+	CompleteStaging(*models.TaskCallbackResponse) error
 }
 
-type BackendConfig struct {
+type StagerConfig struct {
 	CfUsername        string
 	CfPassword        string
 	APIAddress        string

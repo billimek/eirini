@@ -51,8 +51,8 @@ var _ = Describe("Handler", func() {
 			res, err := client.Do(req)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.StatusCode).To(Equal(expectedStatus))
-
 		}
+
 		Context("PUT /apps/:process_guid", func() {
 
 			BeforeEach(func() {
@@ -132,6 +132,33 @@ var _ = Describe("Handler", func() {
 
 			It("serves the endpoint", func() {
 				assertEndpoint()
+			})
+		})
+
+		Context("PUT /stage/:staging_guid", func() {
+
+			BeforeEach(func() {
+				method = "PUT"
+				path = "/stage/stage_123"
+				expectedStatus = http.StatusAccepted
+			})
+
+			It("serves the endpoint", func() {
+				assertEndpoint()
+			})
+		})
+
+		Context("POST /stage/:staging_guid/completed", func() {
+
+			BeforeEach(func() {
+				method = "POST"
+				path = "/stage/stage_123/completed"
+				body = `{"task_guid": "aa129-s90as09-d9kjnz-xo1829-hjsk", "annotation": {"lifecycle": "cycle-for-life"}}`
+				expectedStatus = http.StatusOK
+			})
+
+			It("serves the endpoint", func() {
+				// to be continued -> assertEndpoint()
 			})
 		})
 	})

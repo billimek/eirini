@@ -10,142 +10,137 @@ import (
 )
 
 type FakeStager struct {
-	DesireTaskStub        func(string, cc_messages.StagingRequestFromCC) error
-	desireTaskMutex       sync.RWMutex
-	desireTaskArgsForCall []struct {
+	StageStub        func(string, cc_messages.StagingRequestFromCC) error
+	stageMutex       sync.RWMutex
+	stageArgsForCall []struct {
 		arg1 string
 		arg2 cc_messages.StagingRequestFromCC
 	}
-	desireTaskReturns struct {
+	stageReturns struct {
 		result1 error
 	}
-	desireTaskReturnsOnCall map[int]struct {
+	stageReturnsOnCall map[int]struct {
 		result1 error
 	}
-	BuildStagingResponseStub        func(*models.TaskCallbackResponse) (cc_messages.StagingResponseForCC, error)
-	buildStagingResponseMutex       sync.RWMutex
-	buildStagingResponseArgsForCall []struct {
+	CompleteStagingStub        func(*models.TaskCallbackResponse) error
+	completeStagingMutex       sync.RWMutex
+	completeStagingArgsForCall []struct {
 		arg1 *models.TaskCallbackResponse
 	}
-	buildStagingResponseReturns struct {
-		result1 cc_messages.StagingResponseForCC
-		result2 error
+	completeStagingReturns struct {
+		result1 error
 	}
-	buildStagingResponseReturnsOnCall map[int]struct {
-		result1 cc_messages.StagingResponseForCC
-		result2 error
+	completeStagingReturnsOnCall map[int]struct {
+		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeStager) DesireTask(arg1 string, arg2 cc_messages.StagingRequestFromCC) error {
-	fake.desireTaskMutex.Lock()
-	ret, specificReturn := fake.desireTaskReturnsOnCall[len(fake.desireTaskArgsForCall)]
-	fake.desireTaskArgsForCall = append(fake.desireTaskArgsForCall, struct {
+func (fake *FakeStager) Stage(arg1 string, arg2 cc_messages.StagingRequestFromCC) error {
+	fake.stageMutex.Lock()
+	ret, specificReturn := fake.stageReturnsOnCall[len(fake.stageArgsForCall)]
+	fake.stageArgsForCall = append(fake.stageArgsForCall, struct {
 		arg1 string
 		arg2 cc_messages.StagingRequestFromCC
 	}{arg1, arg2})
-	fake.recordInvocation("DesireTask", []interface{}{arg1, arg2})
-	fake.desireTaskMutex.Unlock()
-	if fake.DesireTaskStub != nil {
-		return fake.DesireTaskStub(arg1, arg2)
+	fake.recordInvocation("Stage", []interface{}{arg1, arg2})
+	fake.stageMutex.Unlock()
+	if fake.StageStub != nil {
+		return fake.StageStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.desireTaskReturns.result1
+	return fake.stageReturns.result1
 }
 
-func (fake *FakeStager) DesireTaskCallCount() int {
-	fake.desireTaskMutex.RLock()
-	defer fake.desireTaskMutex.RUnlock()
-	return len(fake.desireTaskArgsForCall)
+func (fake *FakeStager) StageCallCount() int {
+	fake.stageMutex.RLock()
+	defer fake.stageMutex.RUnlock()
+	return len(fake.stageArgsForCall)
 }
 
-func (fake *FakeStager) DesireTaskArgsForCall(i int) (string, cc_messages.StagingRequestFromCC) {
-	fake.desireTaskMutex.RLock()
-	defer fake.desireTaskMutex.RUnlock()
-	return fake.desireTaskArgsForCall[i].arg1, fake.desireTaskArgsForCall[i].arg2
+func (fake *FakeStager) StageArgsForCall(i int) (string, cc_messages.StagingRequestFromCC) {
+	fake.stageMutex.RLock()
+	defer fake.stageMutex.RUnlock()
+	return fake.stageArgsForCall[i].arg1, fake.stageArgsForCall[i].arg2
 }
 
-func (fake *FakeStager) DesireTaskReturns(result1 error) {
-	fake.DesireTaskStub = nil
-	fake.desireTaskReturns = struct {
+func (fake *FakeStager) StageReturns(result1 error) {
+	fake.StageStub = nil
+	fake.stageReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeStager) DesireTaskReturnsOnCall(i int, result1 error) {
-	fake.DesireTaskStub = nil
-	if fake.desireTaskReturnsOnCall == nil {
-		fake.desireTaskReturnsOnCall = make(map[int]struct {
+func (fake *FakeStager) StageReturnsOnCall(i int, result1 error) {
+	fake.StageStub = nil
+	if fake.stageReturnsOnCall == nil {
+		fake.stageReturnsOnCall = make(map[int]struct {
 			result1 error
 		})
 	}
-	fake.desireTaskReturnsOnCall[i] = struct {
+	fake.stageReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeStager) BuildStagingResponse(arg1 *models.TaskCallbackResponse) (cc_messages.StagingResponseForCC, error) {
-	fake.buildStagingResponseMutex.Lock()
-	ret, specificReturn := fake.buildStagingResponseReturnsOnCall[len(fake.buildStagingResponseArgsForCall)]
-	fake.buildStagingResponseArgsForCall = append(fake.buildStagingResponseArgsForCall, struct {
+func (fake *FakeStager) CompleteStaging(arg1 *models.TaskCallbackResponse) error {
+	fake.completeStagingMutex.Lock()
+	ret, specificReturn := fake.completeStagingReturnsOnCall[len(fake.completeStagingArgsForCall)]
+	fake.completeStagingArgsForCall = append(fake.completeStagingArgsForCall, struct {
 		arg1 *models.TaskCallbackResponse
 	}{arg1})
-	fake.recordInvocation("BuildStagingResponse", []interface{}{arg1})
-	fake.buildStagingResponseMutex.Unlock()
-	if fake.BuildStagingResponseStub != nil {
-		return fake.BuildStagingResponseStub(arg1)
+	fake.recordInvocation("CompleteStaging", []interface{}{arg1})
+	fake.completeStagingMutex.Unlock()
+	if fake.CompleteStagingStub != nil {
+		return fake.CompleteStagingStub(arg1)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fake.buildStagingResponseReturns.result1, fake.buildStagingResponseReturns.result2
+	return fake.completeStagingReturns.result1
 }
 
-func (fake *FakeStager) BuildStagingResponseCallCount() int {
-	fake.buildStagingResponseMutex.RLock()
-	defer fake.buildStagingResponseMutex.RUnlock()
-	return len(fake.buildStagingResponseArgsForCall)
+func (fake *FakeStager) CompleteStagingCallCount() int {
+	fake.completeStagingMutex.RLock()
+	defer fake.completeStagingMutex.RUnlock()
+	return len(fake.completeStagingArgsForCall)
 }
 
-func (fake *FakeStager) BuildStagingResponseArgsForCall(i int) *models.TaskCallbackResponse {
-	fake.buildStagingResponseMutex.RLock()
-	defer fake.buildStagingResponseMutex.RUnlock()
-	return fake.buildStagingResponseArgsForCall[i].arg1
+func (fake *FakeStager) CompleteStagingArgsForCall(i int) *models.TaskCallbackResponse {
+	fake.completeStagingMutex.RLock()
+	defer fake.completeStagingMutex.RUnlock()
+	return fake.completeStagingArgsForCall[i].arg1
 }
 
-func (fake *FakeStager) BuildStagingResponseReturns(result1 cc_messages.StagingResponseForCC, result2 error) {
-	fake.BuildStagingResponseStub = nil
-	fake.buildStagingResponseReturns = struct {
-		result1 cc_messages.StagingResponseForCC
-		result2 error
-	}{result1, result2}
+func (fake *FakeStager) CompleteStagingReturns(result1 error) {
+	fake.CompleteStagingStub = nil
+	fake.completeStagingReturns = struct {
+		result1 error
+	}{result1}
 }
 
-func (fake *FakeStager) BuildStagingResponseReturnsOnCall(i int, result1 cc_messages.StagingResponseForCC, result2 error) {
-	fake.BuildStagingResponseStub = nil
-	if fake.buildStagingResponseReturnsOnCall == nil {
-		fake.buildStagingResponseReturnsOnCall = make(map[int]struct {
-			result1 cc_messages.StagingResponseForCC
-			result2 error
+func (fake *FakeStager) CompleteStagingReturnsOnCall(i int, result1 error) {
+	fake.CompleteStagingStub = nil
+	if fake.completeStagingReturnsOnCall == nil {
+		fake.completeStagingReturnsOnCall = make(map[int]struct {
+			result1 error
 		})
 	}
-	fake.buildStagingResponseReturnsOnCall[i] = struct {
-		result1 cc_messages.StagingResponseForCC
-		result2 error
-	}{result1, result2}
+	fake.completeStagingReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeStager) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.desireTaskMutex.RLock()
-	defer fake.desireTaskMutex.RUnlock()
-	fake.buildStagingResponseMutex.RLock()
-	defer fake.buildStagingResponseMutex.RUnlock()
+	fake.stageMutex.RLock()
+	defer fake.stageMutex.RUnlock()
+	fake.completeStagingMutex.RLock()
+	defer fake.completeStagingMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
