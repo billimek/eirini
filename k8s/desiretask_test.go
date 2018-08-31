@@ -85,8 +85,8 @@ var _ = Describe("Desiretask", func() {
 		})
 
 		It("should desire the task", func() {
-			job, err := fakeClient.BatchV1().Jobs(Namespace).Get("the-stage-is-yours", meta_v1.GetOptions{})
-			Expect(err).ToNot(HaveOccurred())
+			job, getErr := fakeClient.BatchV1().Jobs(Namespace).Get("the-stage-is-yours", meta_v1.GetOptions{})
+			Expect(getErr).ToNot(HaveOccurred())
 
 			assertGeneralSpec(job)
 
@@ -124,7 +124,7 @@ var _ = Describe("Desiretask", func() {
 			})
 
 			It("should delete the job", func() {
-				_, err := fakeClient.BatchV1().Jobs(Namespace).Get("env-app-id", meta_v1.GetOptions{})
+				_, err = fakeClient.BatchV1().Jobs(Namespace).Get("env-app-id", meta_v1.GetOptions{})
 				Expect(err).To(HaveOccurred())
 			})
 		})

@@ -151,7 +151,6 @@ var _ = Describe("Service", func() {
 
 			JustBeforeEach(func() {
 				err = serviceManager.Delete("odin")
-				routesChan <- []*eirini.Routes{{}}
 			})
 
 			It("should not return an error", func() {

@@ -75,7 +75,7 @@ func initStager(cfg *eirini.Config) eirini.Stager {
 		CfUsername:        cfg.Properties.CfUsername,
 		CfPassword:        cfg.Properties.CfPassword,
 		APIAddress:        cfg.Properties.CcAPI,
-		EiriniAddress:     "?",
+		EiriniAddress:     cfg.Properties.EiriniAddress,
 		SkipSslValidation: cfg.Properties.SkipSslValidation,
 	}
 
@@ -109,7 +109,7 @@ func initBifrost(cfg *eirini.Config, workChan chan []*eirini.Routes) eirini.Bifr
 
 	convertLogger := lager.NewLogger("convert")
 	convertLogger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
-	registryIP := cfg.Properties.ExternalAddress
+	registryIP := cfg.Properties.RegistryAddress
 	converter := bifrost.NewConverter(cfClient, client, convertLogger, registryIP, "http://127.0.0.1:8080")
 
 	return &bifrost.Bifrost{
