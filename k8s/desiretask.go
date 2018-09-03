@@ -23,7 +23,10 @@ func (d *TaskDesirer) Desire(task *opi.Task) error {
 }
 
 func (d *TaskDesirer) Delete(name string) error {
-	return d.Client.BatchV1().Jobs(d.Namespace).Delete(name, &meta_v1.DeleteOptions{})
+	backgroundPropagation := meta_v1.DeletePropagationBackground
+	return d.Client.BatchV1().Jobs(d.Namespace).Delete(name, &meta_v1.DeleteOptions{
+		PropagationPolicy: &backgroundPropagation,
+	})
 }
 
 func toJob(task *opi.Task) *batch.Job {

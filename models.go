@@ -14,6 +14,7 @@ const (
 	//Environment Variable Names
 	EnvDownloadURL        = "DOWNLOAD_URL"
 	EnvUploadURL          = "UPLOAD_URL"
+	EnvBuildpacks         = "BUILDPACKS"
 	EnvAppID              = "APP_ID"
 	EnvStagingGUID        = "STAGING_GUID"
 	EnvCompletionCallback = "COMPLETION_CALLBACK"

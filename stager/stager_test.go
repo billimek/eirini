@@ -11,6 +11,7 @@ import (
 	"code.cloudfoundry.org/eirini/opi"
 	"code.cloudfoundry.org/eirini/opi/opifakes"
 	. "code.cloudfoundry.org/eirini/stager"
+	"code.cloudfoundry.org/eirini/stager/stagerfakes"
 	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	. "github.com/onsi/ginkgo"
@@ -23,11 +24,14 @@ var _ = Describe("Stager", func() {
 	var (
 		stager      Stager
 		taskDesirer *opifakes.FakeTaskDesirer
+		uriEncoder  *stagerfakes.FakeURIEncoder
 		err         error
 	)
 
 	BeforeEach(func() {
 		taskDesirer = new(opifakes.FakeTaskDesirer)
+		uriEncoder = new(stagerfakes.FakeURIEncoder)
+
 		logger := lagertest.NewTestLogger("test")
 		config := &eirini.StagerConfig{
 			CfUsername:        "admin",
@@ -42,6 +46,7 @@ var _ = Describe("Stager", func() {
 			Config:     config,
 			Logger:     logger,
 			HTTPClient: &http.Client{},
+			URIEncoder: uriEncoder,
 		}
 	})
 
@@ -90,7 +95,7 @@ var _ = Describe("Stager", func() {
 			Expect(taskDesirer.DesireCallCount()).To(Equal(1))
 			task := taskDesirer.DesireArgsForCall(0)
 			Expect(task).To(Equal(&opi.Task{
-				Image: StagerImage,
+				Image: "eirini/recipe",
 				Env: map[string]string{
 					eirini.EnvDownloadURL:        "example.com/download",
 					eirini.EnvUploadURL:          "example.com/upload",
@@ -152,8 +157,9 @@ var _ = Describe("Stager", func() {
 
 		BeforeEach(func() {
 			server = ghttp.NewServer()
+			uriEncoder.EncodeReturns(fmt.Sprintf("%s/call/me/maybe", server.URL()))
 
-			annotation := fmt.Sprintf(`{"completion_callback": "%s/call/me/maybe"}`, server.URL())
+			annotation := `{"completion_callback": "callbacks.io/call-me"}`
 			task = &models.TaskCallbackResponse{
 				TaskGuid:      "our-task-guid",
 				Failed:        false,
@@ -173,7 +179,7 @@ var _ = Describe("Stager", func() {
 		})
 
 		JustBeforeEach(func() {
-			server.RouteToHandler("PUT", "/call/me/maybe",
+			server.RouteToHandler("POST", "/call/me/maybe",
 				ghttp.CombineHandlers(handlers...),
 			)
 			err = stager.CompleteStaging(task)
@@ -187,7 +193,13 @@ var _ = Describe("Stager", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should put the response", func() {
+		It("should encode the URI", func() {
+			Expect(uriEncoder.EncodeCallCount()).To(Equal(1))
+			callbackURI := uriEncoder.EncodeArgsForCall(0)
+			Expect(callbackURI).To(Equal("callbacks.io/call-me"))
+		})
+
+		It("should post the response", func() {
 			Expect(server.ReceivedRequests()).To(HaveLen(1))
 		})
 
@@ -218,7 +230,7 @@ var _ = Describe("Stager", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("should put the response", func() {
+			It("should post the response", func() {
 				Expect(server.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
@@ -232,7 +244,7 @@ var _ = Describe("Stager", func() {
 				Expect(err).To(HaveOccurred())
 			})
 
-			It("should not put the response", func() {
+			It("should not post the response", func() {
 				Expect(server.ReceivedRequests()).To(HaveLen(0))
 			})
 		})
@@ -246,14 +258,14 @@ var _ = Describe("Stager", func() {
 				Expect(err).To(HaveOccurred())
 			})
 
-			It("should not put the response", func() {
+			It("should not post the response", func() {
 				Expect(server.ReceivedRequests()).To(HaveLen(0))
 			})
 		})
 
 		Context("and the completion callback is an invalid uri", func() {
 			BeforeEach(func() {
-				task.Annotation = `{"completion_callback": "http://example.com/invalid/url/%&"}`
+				uriEncoder.EncodeReturns("http://example.com/invalid/url/%&")
 			})
 
 			It("should return an error", func() {
@@ -273,7 +285,7 @@ var _ = Describe("Stager", func() {
 				Expect(err).To(HaveOccurred())
 			})
 
-			It("should put the response", func() {
+			It("should post the response", func() {
 				Expect(server.ReceivedRequests()).To(HaveLen(1))
 			})
 		})

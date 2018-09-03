@@ -1,4 +1,4 @@
-package main_test
+package recipe_test
 
 import (
 	"errors"
@@ -19,7 +19,7 @@ var _ = Describe("Uploader", func() {
 
 	BeforeEach(func() {
 		cfclient = new(eirinifakes.FakeCfClient)
-		uploader = Uploader{Cfclient: cfclient}
+		uploader = &DropletUploader{Cfclient: cfclient}
 	})
 
 	Context("UploadWithCfClient", func() {

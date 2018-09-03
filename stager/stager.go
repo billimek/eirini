@@ -14,20 +14,22 @@ import (
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 )
 
-const StagerImage = "diegoteam/recipe:build"
+const StagerImage = "eirini/recipe"
 
 type Stager struct {
 	Desirer    opi.TaskDesirer
 	Config     *eirini.StagerConfig
 	Logger     lager.Logger
+	URIEncoder URIEncoder
 	HTTPClient *http.Client
 }
 
 func New(desirer opi.TaskDesirer, config eirini.StagerConfig) *Stager {
 	return &Stager{
-		Desirer: desirer,
-		Config:  &config,
-		Logger:  lager.NewLogger("stager"),
+		Desirer:    desirer,
+		Config:     &config,
+		Logger:     lager.NewLogger("stager"),
+		URIEncoder: &HostnameEncoder{Replacement: config.APIAddress},
 		HTTPClient: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
@@ -57,11 +59,17 @@ func (s *Stager) createStagingTask(stagingGUID string, request cc_messages.Stagi
 		return &opi.Task{}, err
 	}
 
+	buildpacksJSON, err := json.Marshal(lifecycleData.Buildpacks)
+	if err != nil {
+		return nil, err
+	}
+
 	stagingTask := &opi.Task{
 		Image: StagerImage,
 		Env: map[string]string{
 			eirini.EnvDownloadURL:        lifecycleData.AppBitsDownloadUri,
 			eirini.EnvUploadURL:          lifecycleData.DropletUploadUri,
+			eirini.EnvBuildpacks:         string(buildpacksJSON),
 			eirini.EnvAppID:              request.LogGuid,
 			eirini.EnvStagingGUID:        stagingGUID,
 			eirini.EnvCompletionCallback: request.CompletionCallback,
@@ -89,7 +97,7 @@ func (s *Stager) CompleteStaging(task *models.TaskCallbackResponse) error {
 		return err
 	}
 
-	request, err := http.NewRequest("PUT", callbackURI, bytes.NewBuffer(callbackBody))
+	request, err := http.NewRequest("POST", callbackURI, bytes.NewBuffer(callbackBody))
 	if err != nil {
 		l.Error("failed-to-create-callback-request", err)
 		return err
@@ -146,5 +154,6 @@ func (s *Stager) getCallbackURI(task *models.TaskCallbackResponse) (string, erro
 		return "", err
 	}
 
-	return annotation.CompletionCallback, nil
+	encoded := s.URIEncoder.Encode(annotation.CompletionCallback)
+	return encoded, nil
 }

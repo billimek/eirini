@@ -84,10 +84,13 @@ func (c *DropletToImageConverter) dropletToImageURI(request cf.DesireLRPRequest,
 		return request.DockerImageURL, nil
 	}
 
+	// dropletBytes, err := c.downloadDroplet(vcap.AppID, request.DropletHash)
 	dropletBytes, err := c.cfClient.GetDropletByAppGuid(vcap.AppID)
 	if err != nil {
 		return "", err
 	}
+
+	fmt.Println("Droplet got \\o/")
 
 	if err = c.stageRequest(vcap, request.DropletHash, dropletBytes); err != nil {
 		return "", err
@@ -107,6 +110,7 @@ func (c *DropletToImageConverter) stageRequest(vcap cf.VcapApp, dropletHash stri
 	}
 
 	req.Header.Set("Content-Type", "application/gzip")
+	// req.Header.Add("Accept-Encoding", "gzip")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
