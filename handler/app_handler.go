@@ -164,6 +164,7 @@ func createErrorGetInstancesResponse(guid string, err error) cf.GetInstancesResp
 	return cf.GetInstancesResponse{
 		ProcessGUID: guid,
 		Error:       err.Error(),
+		Instances:   []*cf.Instance{},
 	}
 }
 
