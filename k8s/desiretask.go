@@ -35,6 +35,12 @@ func toJob(task *opi.Task) *batch.Job {
 			ActiveDeadlineSeconds: int64ptr(ActiveDeadlineSeconds),
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
+					HostAliases: []v1.HostAlias{
+						{
+							IP:        "10.45.94.125",
+							Hostnames: []string{"cc-uploader.service.cf.internal"},
+						},
+					},
 					Containers: []v1.Container{{
 						Name:  "opi-task",
 						Image: task.Image,
