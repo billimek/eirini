@@ -21,10 +21,6 @@ RUN mkdir -p /packs
 COPY builder /packs/
 COPY recipe /packs/
 
-COPY certs/cc_ca /tmp/
-COPY certs/cc_cert /tmp/
-COPY certs/cc_priv /tmp/
-
 ENTRYPOINT [ \
   "/packs/recipe" \
 ]
