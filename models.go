@@ -15,6 +15,7 @@ const (
 	EnvDownloadURL        = "DOWNLOAD_URL"
 	EnvUploadURL          = "UPLOAD_URL"
 	EnvBuildpacks         = "BUILDPACKS"
+	EnvDropletDownloadURL = "DROPLET_DOWNLOAD_URL"
 	EnvAppID              = "APP_ID"
 	EnvStagingGUID        = "STAGING_GUID"
 	EnvCompletionCallback = "COMPLETION_CALLBACK"

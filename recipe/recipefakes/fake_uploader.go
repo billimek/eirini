@@ -8,11 +8,11 @@ import (
 )
 
 type FakeUploader struct {
-	UploadStub        func(guid, path string) error
+	UploadStub        func(path, url string) error
 	uploadMutex       sync.RWMutex
 	uploadArgsForCall []struct {
-		guid string
 		path string
+		url  string
 	}
 	uploadReturns struct {
 		result1 error
@@ -24,17 +24,17 @@ type FakeUploader struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeUploader) Upload(guid string, path string) error {
+func (fake *FakeUploader) Upload(path string, url string) error {
 	fake.uploadMutex.Lock()
 	ret, specificReturn := fake.uploadReturnsOnCall[len(fake.uploadArgsForCall)]
 	fake.uploadArgsForCall = append(fake.uploadArgsForCall, struct {
-		guid string
 		path string
-	}{guid, path})
-	fake.recordInvocation("Upload", []interface{}{guid, path})
+		url  string
+	}{path, url})
+	fake.recordInvocation("Upload", []interface{}{path, url})
 	fake.uploadMutex.Unlock()
 	if fake.UploadStub != nil {
-		return fake.UploadStub(guid, path)
+		return fake.UploadStub(path, url)
 	}
 	if specificReturn {
 		return ret.result1
@@ -51,7 +51,7 @@ func (fake *FakeUploader) UploadCallCount() int {
 func (fake *FakeUploader) UploadArgsForCall(i int) (string, string) {
 	fake.uploadMutex.RLock()
 	defer fake.uploadMutex.RUnlock()
-	return fake.uploadArgsForCall[i].guid, fake.uploadArgsForCall[i].path
+	return fake.uploadArgsForCall[i].path, fake.uploadArgsForCall[i].url
 }
 
 func (fake *FakeUploader) UploadReturns(result1 error) {

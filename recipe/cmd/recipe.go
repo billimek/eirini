@@ -18,13 +18,13 @@ func main() {
 	stagingGUID := os.Getenv(eirini.EnvStagingGUID)
 	completionCallback := os.Getenv(eirini.EnvCompletionCallback)
 	eiriniAddress := os.Getenv(eirini.EnvEiriniAddress)
+	dropletDownloadURL := os.Getenv(eirini.EnvDropletDownloadURL)
 	buildpacks := os.Getenv(eirini.EnvBuildpacks)
-
-	fmt.Println("Provided buildpacks info is: ", buildpacks)
 
 	username := os.Getenv(eirini.EnvCfUsername)
 	password := os.Getenv(eirini.EnvCfPassword)
 	apiAddress := os.Getenv(eirini.EnvAPIAddress)
+
 	cfg := &cfclient.Config{
 		SkipSslValidation: true,
 		Username:          username,
@@ -40,28 +40,38 @@ func main() {
 	}
 
 	installer := &recipe.PackageInstaller{Cfclient: cfclient, Extractor: &recipe.Unzipper{}}
-	uploader := &recipe.DropletUploader{Config: cfg}
+	uploader := &recipe.DropletUploader{HTTPClient: createHttpClient()}
 	commander := &recipe.IOCommander{
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 		Stdin:  os.Stdin,
 	}
 
-	config := recipe.PacksBuilderConf{
+	packsConf := recipe.PacksBuilderConf{
 		BuildpacksDir:             "/var/lib/buildpacks",
 		OutputDropletLocation:     "/out/droplet.tgz",
 		OutputBuildArtifactsCache: "/cache/cache.tgz",
 		OutputMetadataLocation:    "/out/result.json",
 	}
 
+	buildpacksKeyModifier := &recipe.BuildpacksKeyModifier{CCBuildpacksJSON: buildpacks}
+
 	executor := &recipe.PacksExecutor{
-		Conf:      config,
-		Installer: installer,
-		Uploader:  uploader,
-		Commander: commander,
+		Conf:           packsConf,
+		Installer:      installer,
+		Uploader:       uploader,
+		Commander:      commander,
+		ResultModifier: buildpacksKeyModifier,
 	}
 
-	err = executor.ExecuteRecipe(appID, stagingGUID, completionCallback, eiriniAddress, buildpacks)
+	recipeConf := recipe.RecipeConf{
+		AppID:              appID,
+		StagingGUID:        stagingGUID,
+		CompletionCallback: completionCallback,
+		EiriniAddr:         eiriniAddress,
+		DropletUploadURL:   dropletDownloadURL,
+	}
+	err = executor.ExecuteRecipe(recipeConf)
 	if err != nil {
 		fmt.Println("Error while executing staging recipe:", err.Error())
 		os.Exit(1)

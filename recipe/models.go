@@ -1,13 +1,19 @@
 package recipe
 
+import bap "code.cloudfoundry.org/buildpackapplifecycle"
+
 type Executor interface {
-	ExecuteRecipe(appID, stagingGUID, completionCallback, eiriniAddr, providedBuildpacksJSON string) error
+	ExecuteRecipe(config RecipeConf) error
+}
+
+//go:generate counterfeiter . StagingResultModifier
+type StagingResultModifier interface {
+	Modify(result bap.StagingResult) (bap.StagingResult, error)
 }
 
 //go:generate counterfeiter . Uploader
 type Uploader interface {
-	Upload(guid, path string) error
-	UploadCache(appGUID, stagingGUID, path string) error
+	Upload(path, url string) error
 }
 
 //go:generate counterfeiter . Installer

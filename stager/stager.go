@@ -20,16 +20,14 @@ type Stager struct {
 	Desirer    opi.TaskDesirer
 	Config     *eirini.StagerConfig
 	Logger     lager.Logger
-	URIEncoder URIEncoder
 	HTTPClient *http.Client
 }
 
 func New(desirer opi.TaskDesirer, config eirini.StagerConfig) *Stager {
 	return &Stager{
-		Desirer:    desirer,
-		Config:     &config,
-		Logger:     lager.NewLogger("stager"),
-		URIEncoder: &HostnameEncoder{Replacement: config.APIAddress},
+		Desirer: desirer,
+		Config:  &config,
+		Logger:  lager.NewLogger("stager"),
 		HTTPClient: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
@@ -154,6 +152,5 @@ func (s *Stager) getCallbackURI(task *models.TaskCallbackResponse) (string, erro
 		return "", err
 	}
 
-	encoded := s.URIEncoder.Encode(annotation.CompletionCallback)
-	return encoded, nil
+	return annotation.CompletionCallback, nil
 }

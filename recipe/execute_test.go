@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 
+	bap "code.cloudfoundry.org/buildpackapplifecycle"
 	. "code.cloudfoundry.org/eirini/recipe"
 	"code.cloudfoundry.org/eirini/recipe/recipefakes"
 )
@@ -17,11 +18,13 @@ import (
 var _ = Describe("PacksExecutor", func() {
 
 	var (
-		executor  Executor
-		installer *recipefakes.FakeInstaller
-		uploader  *recipefakes.FakeUploader
-		commander *recipefakes.FakeCommander
-		tmpfile   *os.File
+		executor       Executor
+		installer      *recipefakes.FakeInstaller
+		uploader       *recipefakes.FakeUploader
+		commander      *recipefakes.FakeCommander
+		resultModifier *recipefakes.FakeStagingResultModifier
+		tmpfile        *os.File
+		resultContents string
 	)
 
 	createTmpFile := func() {
@@ -30,7 +33,7 @@ var _ = Describe("PacksExecutor", func() {
 		tmpfile, err = ioutil.TempFile("", "metadata_result")
 		Expect(err).ToNot(HaveOccurred())
 
-		_, err = tmpfile.Write([]byte("everything's fine"))
+		_, err = tmpfile.Write([]byte(resultContents))
 		Expect(err).ToNot(HaveOccurred())
 
 		err = tmpfile.Close()
@@ -41,10 +44,18 @@ var _ = Describe("PacksExecutor", func() {
 		installer = new(recipefakes.FakeInstaller)
 		uploader = new(recipefakes.FakeUploader)
 		commander = new(recipefakes.FakeCommander)
+		resultModifier = new(recipefakes.FakeStagingResultModifier)
 
+		resultModifier.ModifyStub = func(result bap.StagingResult) (bap.StagingResult, error) {
+			return result, nil
+		}
+
+		resultContents = `{"lifecycle_type":"no-type", "execution_metadata":"data"}`
+	})
+
+	JustBeforeEach(func() {
 		createTmpFile()
-
-		config := PacksBuilderConf{
+		packsConf := PacksBuilderConf{
 			BuildpacksDir:             "/var/lib/buildpacks",
 			OutputDropletLocation:     "/out/droplet.tgz",
 			OutputBuildArtifactsCache: "/cache/cache.tgz",
@@ -52,11 +63,13 @@ var _ = Describe("PacksExecutor", func() {
 		}
 
 		executor = &PacksExecutor{
-			Conf:      config,
-			Installer: installer,
-			Uploader:  uploader,
-			Commander: commander,
+			Conf:           packsConf,
+			Installer:      installer,
+			Uploader:       uploader,
+			Commander:      commander,
+			ResultModifier: resultModifier,
 		}
+
 	})
 
 	AfterEach(func() {
@@ -77,7 +90,7 @@ var _ = Describe("PacksExecutor", func() {
 						"task_guid": "staging-guid",
 						"failed": false,
 						"failure_reason": "",
-						"result": "everything's fine",
+						"result": "{\"lifecycle_metadata\":{\"detected_buildpack\":\"\",\"buildpacks\":null},\"process_types\":null,\"execution_metadata\":\"data\",\"lifecycle_type\":\"no-type\"}",
 						"annotation": "{\"lifecycle\":\"\",\"completion_callback\":\"completion-call-me-back\"}",
 						"created_at": 0
 					}`),
@@ -85,7 +98,14 @@ var _ = Describe("PacksExecutor", func() {
 		})
 
 		JustBeforeEach(func() {
-			err = executor.ExecuteRecipe("app-id", "staging-guid", "completion-call-me-back", server.URL())
+			recipeConf := RecipeConf{
+				AppID:              "app-id",
+				StagingGUID:        "staging-guid",
+				CompletionCallback: "completion-call-me-back",
+				EiriniAddr:         server.URL(),
+				DropletUploadURL:   "droplet.eu/upload",
+			}
+			err = executor.ExecuteRecipe(recipeConf)
 		})
 
 		AfterEach(func() {
@@ -120,15 +140,35 @@ var _ = Describe("PacksExecutor", func() {
 		It("should upload the droplet", func() {
 			Expect(uploader.UploadCallCount()).To(Equal(1))
 
-			appID, path := uploader.UploadArgsForCall(0)
-			Expect(appID).To(Equal("app-id"))
+			path, url := uploader.UploadArgsForCall(0)
 			Expect(path).To(Equal("/out/droplet.tgz"))
+			Expect(url).To(Equal("droplet.eu/upload"))
 		})
 
 		It("should send successful completion response", func() {
 			Expect(server.ReceivedRequests()).To(HaveLen(1))
 		})
 
+		Context("and unmarshalling the staging result fails", func() {
+			BeforeEach(func() {
+				resultContents = "{ not valid json"
+			})
+
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("and the result modifier fails", func() {
+			BeforeEach(func() {
+				resultModifier.ModifyReturns(bap.StagingResult{}, errors.New("Unmodifiable"))
+			})
+
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+
+		})
 		Context("and download or extract of app bits fails", func() {
 
 			BeforeEach(func() {
