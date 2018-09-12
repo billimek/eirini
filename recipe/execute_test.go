@@ -98,7 +98,7 @@ var _ = Describe("PacksExecutor", func() {
 		})
 
 		JustBeforeEach(func() {
-			recipeConf := RecipeConf{
+			recipeConf := Config{
 				AppID:              "app-id",
 				StagingGUID:        "staging-guid",
 				CompletionCallback: "completion-call-me-back",

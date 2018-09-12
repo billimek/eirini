@@ -39,7 +39,7 @@ type PacksBuilderConf struct {
 	OutputMetadataLocation    string
 }
 
-type RecipeConf struct {
+type Config struct {
 	AppID              string
 	StagingGUID        string
 	CompletionCallback string
@@ -55,7 +55,7 @@ type PacksExecutor struct {
 	ResultModifier StagingResultModifier
 }
 
-func (e *PacksExecutor) ExecuteRecipe(recipeConf RecipeConf) error {
+func (e *PacksExecutor) ExecuteRecipe(recipeConf Config) error {
 	err := e.Installer.Install(recipeConf.AppID, workspaceDir)
 	if err != nil {
 		respondWithFailure(err, recipeConf)
@@ -89,7 +89,7 @@ func (e *PacksExecutor) ExecuteRecipe(recipeConf RecipeConf) error {
 	return sendCompleteResponse(recipeConf.EiriniAddr, cbResponse)
 }
 
-func (e *PacksExecutor) createSuccessResponse(recipeConf RecipeConf) (*models.TaskCallbackResponse, error) {
+func (e *PacksExecutor) createSuccessResponse(recipeConf Config) (*models.TaskCallbackResponse, error) {
 	stagingResult, err := getStagingResult(e.Conf.OutputMetadataLocation)
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func createFailureResponse(failure error, stagingGUID, completionCallback string
 	}
 }
 
-func respondWithFailure(failure error, recipeConf RecipeConf) {
+func respondWithFailure(failure error, recipeConf Config) {
 	cbResponse := createFailureResponse(failure, recipeConf.StagingGUID, recipeConf.CompletionCallback)
 
 	if completeErr := sendCompleteResponse(recipeConf.EiriniAddr, cbResponse); completeErr != nil {

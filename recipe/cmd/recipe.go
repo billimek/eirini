@@ -30,7 +30,7 @@ func main() {
 		Username:          username,
 		Password:          password,
 		ApiAddress:        apiAddress,
-		HttpClient:        createHttpClient(),
+		HttpClient:        createHTTPClient(),
 	}
 
 	cfclient, err := cfclient.NewClient(cfg)
@@ -40,7 +40,7 @@ func main() {
 	}
 
 	installer := &recipe.PackageInstaller{Cfclient: cfclient, Extractor: &recipe.Unzipper{}}
-	uploader := &recipe.DropletUploader{HTTPClient: createHttpClient()}
+	uploader := &recipe.DropletUploader{HTTPClient: createHTTPClient()}
 	commander := &recipe.IOCommander{
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
@@ -64,7 +64,7 @@ func main() {
 		ResultModifier: buildpacksKeyModifier,
 	}
 
-	recipeConf := recipe.RecipeConf{
+	recipeConf := recipe.Config{
 		AppID:              appID,
 		StagingGUID:        stagingGUID,
 		CompletionCallback: completionCallback,
@@ -80,7 +80,7 @@ func main() {
 	fmt.Println("Staging completed")
 }
 
-func createHttpClient() *http.Client {
+func createHTTPClient() *http.Client {
 	certLocation := "/tmp/cc_cert"
 	cacertLocation := "/tmp/cc_ca"
 	privKeyLocation := "/tmp/cc_priv"

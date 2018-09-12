@@ -3,6 +3,7 @@ package stager_test
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"code.cloudfoundry.org/bbs/models"
@@ -56,7 +57,15 @@ var _ = Describe("Stager", func() {
 
 			lData := json.RawMessage(`{
 				"app_bits_download_uri": "example.com/download",
-				"droplet_upload_uri": "example.com/upload"
+				"droplet_upload_uri": "example.com/upload",
+				"buildpacks": [
+					{
+						"name": "go_buildpack",
+						"key": "1234eeff",
+						"url": "example.com/build/pack",
+						"skip_detect":true
+					}
+				]
 			}`)
 			request = cc_messages.StagingRequestFromCC{
 				AppId:           "our-app-id",
@@ -97,6 +106,7 @@ var _ = Describe("Stager", func() {
 					eirini.EnvAppID:              request.LogGuid,
 					eirini.EnvStagingGUID:        stagingGUID,
 					eirini.EnvCompletionCallback: request.CompletionCallback,
+					eirini.EnvBuildpacks:         `[{"name":"go_buildpack","key":"1234eeff","url":"example.com/build/pack","skip_detect":true}]`,
 					eirini.EnvCfUsername:         "admin",
 					eirini.EnvCfPassword:         "not1234567",
 					eirini.EnvAPIAddress:         "api.bosh-lite.com",
@@ -153,7 +163,7 @@ var _ = Describe("Stager", func() {
 		BeforeEach(func() {
 			server = ghttp.NewServer()
 
-			annotation := `{"completion_callback": "callbacks.io/call-me"}`
+			annotation := fmt.Sprintf(`{"completion_callback": "%s/call/me/maybe"}`, server.URL())
 			task = &models.TaskCallbackResponse{
 				TaskGuid:      "our-task-guid",
 				Failed:        false,
