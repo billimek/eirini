@@ -11,6 +11,7 @@ import (
 	"code.cloudfoundry.org/eirini/opi"
 	"code.cloudfoundry.org/eirini/opi/opifakes"
 	. "code.cloudfoundry.org/eirini/stager"
+	"code.cloudfoundry.org/eirini/stager/stagerfakes"
 	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	. "github.com/onsi/ginkgo"
@@ -23,11 +24,13 @@ var _ = Describe("Stager", func() {
 	var (
 		stager      Stager
 		taskDesirer *opifakes.FakeTaskDesirer
+		uriEncoder  *stagerfakes.FakeURIEncoder
 		err         error
 	)
 
 	BeforeEach(func() {
 		taskDesirer = new(opifakes.FakeTaskDesirer)
+		uriEncoder = new(stagerfakes.FakeURIEncoder)
 
 		logger := lagertest.NewTestLogger("test")
 		config := &eirini.StagerConfig{
@@ -42,6 +45,7 @@ var _ = Describe("Stager", func() {
 			Desirer:    taskDesirer,
 			Config:     config,
 			Logger:     logger,
+			URIEncoder: uriEncoder,
 			HTTPClient: &http.Client{},
 		}
 	})
@@ -162,8 +166,9 @@ var _ = Describe("Stager", func() {
 
 		BeforeEach(func() {
 			server = ghttp.NewServer()
+			uriEncoder.EncodeReturns(fmt.Sprintf("%s/call/me/maybe", server.URL()))
 
-			annotation := fmt.Sprintf(`{"completion_callback": "%s/call/me/maybe"}`, server.URL())
+			annotation := `{"completion_callback": "callbacks.io/call-me"}`
 			task = &models.TaskCallbackResponse{
 				TaskGuid:      "our-task-guid",
 				Failed:        false,
@@ -195,6 +200,12 @@ var _ = Describe("Stager", func() {
 
 		It("should not return an error", func() {
 			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should encode the URI", func() {
+			Expect(uriEncoder.EncodeCallCount()).To(Equal(1))
+			callbackURI := uriEncoder.EncodeArgsForCall(0)
+			Expect(callbackURI).To(Equal("callbacks.io/call-me"))
 		})
 
 		It("should post the response", func() {
@@ -258,6 +269,16 @@ var _ = Describe("Stager", func() {
 
 			It("should not post the response", func() {
 				Expect(server.ReceivedRequests()).To(HaveLen(0))
+			})
+		})
+
+		Context("and the completion callback is an invalid uri", func() {
+			BeforeEach(func() {
+				uriEncoder.EncodeReturns("http://example.com/invalid/url/%&")
+			})
+
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
