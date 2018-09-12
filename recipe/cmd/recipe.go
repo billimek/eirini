@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"code.cloudfoundry.org/eirini"
 	"code.cloudfoundry.org/eirini/recipe"
@@ -81,9 +82,9 @@ func main() {
 }
 
 func createHTTPClient() *http.Client {
-	certLocation := "/tmp/cc_cert"
-	cacertLocation := "/tmp/cc_ca"
-	privKeyLocation := "/tmp/cc_priv"
+	certLocation := filepath.Join(eirini.CCCertsMountPath, "cc_cert")
+	cacertLocation := filepath.Join(eirini.CCCertsMountPath, "cc_ca")
+	privKeyLocation := filepath.Join(eirini.CCCertsMountPath, "cc_priv")
 
 	cert, err := tls.LoadX509KeyPair(certLocation, privKeyLocation)
 	if err != nil {

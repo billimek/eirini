@@ -16,8 +16,9 @@ import (
 var _ = Describe("Desiretask", func() {
 
 	const (
-		Namespace = "tests"
-		Image     = "docker.png"
+		Namespace    = "tests"
+		Image        = "docker.png"
+		CCUploaderIP = "10.10.10.1"
 	)
 
 	var (
@@ -44,8 +45,9 @@ var _ = Describe("Desiretask", func() {
 			},
 		}
 		desirer = &TaskDesirer{
-			Namespace: Namespace,
-			Client:    fakeClient,
+			Namespace:    Namespace,
+			CCUploaderIP: CCUploaderIP,
+			Client:       fakeClient,
 		}
 	})
 
@@ -95,9 +97,70 @@ var _ = Describe("Desiretask", func() {
 
 			assertContainer(containers[0])
 		})
+
 		Context("and the job already exists", func() {
 			BeforeEach(func() {
 				err = desirer.Desire(task)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Context("When desiring a staging task", func() {
+
+		assertHostAliases := func(job *batch.Job) {
+			Expect(job.Spec.Template.Spec.HostAliases).To(HaveLen(1))
+			hostAlias := job.Spec.Template.Spec.HostAliases[0]
+
+			Expect(hostAlias.IP).To(Equal(CCUploaderIP))
+			Expect(hostAlias.Hostnames).To(ContainElement("cc-uploader.service.cf.internal"))
+		}
+
+		assertVolumes := func(job *batch.Job) {
+			Expect(job.Spec.Template.Spec.Volumes).To(HaveLen(1))
+			volume := job.Spec.Template.Spec.Volumes[0]
+
+			Expect(volume.Name).To(Equal("cc_certs_volume"))
+			Expect(volume.VolumeSource.ConfigMap.Name).To(Equal("cc_certs"))
+		}
+
+		assertContainerVolumeMount := func(job *batch.Job) {
+			Expect(job.Spec.Template.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
+			mount := job.Spec.Template.Spec.Containers[0].VolumeMounts[0]
+
+			Expect(mount.Name).To(Equal("cc_certs_volume"))
+			Expect(mount.ReadOnly).To(Equal(true))
+			Expect(mount.MountPath).To(Equal("/etc/config/certs"))
+		}
+
+		assertStagingSpec := func(job *batch.Job) {
+			assertHostAliases(job)
+			assertVolumes(job)
+			assertContainerVolumeMount(job)
+		}
+
+		JustBeforeEach(func() {
+			err = desirer.DesireStaging(task)
+		})
+
+		It("should not return an error", func() {
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should desire the staging task", func() {
+			job, getErr := fakeClient.BatchV1().Jobs(Namespace).Get("the-stage-is-yours", meta_v1.GetOptions{})
+
+			Expect(getErr).ToNot(HaveOccurred())
+			assertStagingSpec(job)
+		})
+
+		Context("When the staging task already exists", func() {
+			BeforeEach(func() {
+				err = desirer.DesireStaging(task)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -134,7 +197,6 @@ var _ = Describe("Desiretask", func() {
 			It("should return an error", func() {
 				Expect(err).To(HaveOccurred())
 			})
-
 		})
 
 	})

@@ -45,7 +45,7 @@ func (s *Stager) Stage(stagingGUID string, request cc_messages.StagingRequestFro
 		return err
 	}
 
-	return s.Desirer.Desire(task)
+	return s.Desirer.DesireStaging(task)
 }
 
 func (s *Stager) createStagingTask(stagingGUID string, request cc_messages.StagingRequestFromCC) (*opi.Task, error) {

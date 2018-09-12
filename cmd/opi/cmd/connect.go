@@ -67,8 +67,9 @@ func connect(cmd *cobra.Command, args []string) {
 func initStager(cfg *eirini.Config) eirini.Stager {
 	clientset := createKubeClient(cfg)
 	taskDesirer := &k8s.TaskDesirer{
-		Namespace: cfg.Properties.KubeNamespace,
-		Client:    clientset,
+		Namespace:    cfg.Properties.KubeNamespace,
+		CCUploaderIP: cfg.Properties.CcUploaderIP,
+		Client:       clientset,
 	}
 
 	stagerCfg := eirini.StagerConfig{

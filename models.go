@@ -26,6 +26,12 @@ const (
 
 	//routes
 	RegisteredRoutes = "routes"
+
+	//cc-uploader certs
+	CCUploaderInternalURL = "cc-uploader.service.cf.internal"
+	CCCertsMountPath      = "/etc/config/certs"
+	CCCertsConfigMapName  = "cc_certs"
+	CCCertsVolumeName     = "cc_certs_volume"
 )
 
 //go:generate counterfeiter . CfClient
@@ -46,6 +52,7 @@ type Properties struct {
 	NatsPassword       string `yaml:"nats_password"`
 	NatsIP             string `yaml:"nats_ip"`
 	RegistryEndpoint   string `yaml:"registry_endpoint"`
+	CcUploaderIP       string `yaml:"cc_uploader_ip"`
 	CcAPI              string `yaml:"api_endpoint"`
 	Backend            string `yaml:"backend"`
 	CfUsername         string `yaml:"cf_username"`

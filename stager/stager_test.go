@@ -96,8 +96,8 @@ var _ = Describe("Stager", func() {
 		})
 
 		It("should desire a converted task", func() {
-			Expect(taskDesirer.DesireCallCount()).To(Equal(1))
-			task := taskDesirer.DesireArgsForCall(0)
+			Expect(taskDesirer.DesireStagingCallCount()).To(Equal(1))
+			task := taskDesirer.DesireStagingArgsForCall(0)
 			Expect(task).To(Equal(&opi.Task{
 				Image: "eirini/recipe",
 				Env: map[string]string{
@@ -134,7 +134,7 @@ var _ = Describe("Stager", func() {
 			})
 
 			It("should not desire the task", func() {
-				Expect(taskDesirer.DesireCallCount()).To(Equal(0))
+				Expect(taskDesirer.DesireStagingCallCount()).To(Equal(0))
 			})
 
 		})
@@ -142,7 +142,7 @@ var _ = Describe("Stager", func() {
 		Context("and desiring the task fails", func() {
 
 			BeforeEach(func() {
-				taskDesirer.DesireReturns(errors.New("woopsie"))
+				taskDesirer.DesireStagingReturns(errors.New("woopsie"))
 			})
 
 			It("should return an error", func() {
