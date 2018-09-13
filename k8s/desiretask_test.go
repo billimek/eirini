@@ -125,7 +125,7 @@ var _ = Describe("Desiretask", func() {
 			volume := job.Spec.Template.Spec.Volumes[0]
 
 			Expect(volume.Name).To(Equal("cc-certs-volume"))
-			Expect(volume.VolumeSource.ConfigMap.Name).To(Equal("cc-certs"))
+			Expect(volume.VolumeSource.Secret.SecretName).To(Equal("cc-certs"))
 		}
 
 		assertContainerVolumeMount := func(job *batch.Job) {

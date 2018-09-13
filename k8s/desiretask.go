@@ -48,10 +48,8 @@ func (d *TaskDesirer) toStagingJob(task *opi.Task) *batch.Job {
 		{
 			Name: eirini.CCCertsVolumeName,
 			VolumeSource: v1.VolumeSource{
-				ConfigMap: &v1.ConfigMapVolumeSource{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: eirini.CCCertsConfigMapName,
-					},
+				Secret: &v1.SecretVolumeSource{
+					SecretName: eirini.CCCertsSecretName,
 				},
 			},
 		},
