@@ -28,6 +28,31 @@ var _ = Describe("Desiretask", func() {
 		err        error
 	)
 
+	assertGeneralSpec := func(job *batch.Job) {
+		Expect(job.Name).To(Equal("the-stage-is-yours"))
+		Expect(job.Spec.ActiveDeadlineSeconds).To(Equal(int64ptr(900)))
+		Expect(job.Spec.Template.Spec.RestartPolicy).To(Equal(v1.RestartPolicyNever))
+		Expect(job.Spec.Template.Labels).To(Equal(map[string]string{"name": "env-app-id"}))
+		Expect(job.Labels).To(Equal(map[string]string{"name": "env-app-id"}))
+	}
+
+	assertContainer := func(container v1.Container) {
+		Expect(container.Name).To(Equal("opi-task"))
+		Expect(container.Image).To(Equal(Image))
+
+		Expect(container.Env).To(ConsistOf(
+			v1.EnvVar{Name: eirini.EnvDownloadURL, Value: "example.com/download"},
+			v1.EnvVar{Name: eirini.EnvUploadURL, Value: "example.com/upload"},
+			v1.EnvVar{Name: eirini.EnvAppID, Value: "env-app-id"},
+			v1.EnvVar{Name: eirini.EnvStagingGUID, Value: "the-stage-is-yours"},
+			v1.EnvVar{Name: eirini.EnvCompletionCallback, Value: "example.com/call/me/maybe"},
+			v1.EnvVar{Name: eirini.EnvCfUsername, Value: "admin"},
+			v1.EnvVar{Name: eirini.EnvCfPassword, Value: "not1234567"},
+			v1.EnvVar{Name: eirini.EnvAPIAddress, Value: "api.bosh-lite.com"},
+			v1.EnvVar{Name: eirini.EnvEiriniAddress, Value: "http://opi.cf.internal"},
+		))
+	}
+
 	BeforeEach(func() {
 		fakeClient = fake.NewSimpleClientset()
 		task = &opi.Task{
@@ -52,31 +77,6 @@ var _ = Describe("Desiretask", func() {
 	})
 
 	Context("When desiring a task", func() {
-
-		assertGeneralSpec := func(job *batch.Job) {
-			Expect(job.Name).To(Equal("the-stage-is-yours"))
-			Expect(job.Spec.ActiveDeadlineSeconds).To(Equal(int64ptr(900)))
-			Expect(job.Spec.Template.Spec.RestartPolicy).To(Equal(v1.RestartPolicyNever))
-			Expect(job.Spec.Template.Labels).To(Equal(map[string]string{"name": "env-app-id"}))
-			Expect(job.Labels).To(Equal(map[string]string{"name": "env-app-id"}))
-		}
-
-		assertContainer := func(container v1.Container) {
-			Expect(container.Name).To(Equal("opi-task"))
-			Expect(container.Image).To(Equal(Image))
-
-			Expect(container.Env).To(ConsistOf(
-				v1.EnvVar{Name: eirini.EnvDownloadURL, Value: "example.com/download"},
-				v1.EnvVar{Name: eirini.EnvUploadURL, Value: "example.com/upload"},
-				v1.EnvVar{Name: eirini.EnvAppID, Value: "env-app-id"},
-				v1.EnvVar{Name: eirini.EnvStagingGUID, Value: "the-stage-is-yours"},
-				v1.EnvVar{Name: eirini.EnvCompletionCallback, Value: "example.com/call/me/maybe"},
-				v1.EnvVar{Name: eirini.EnvCfUsername, Value: "admin"},
-				v1.EnvVar{Name: eirini.EnvCfPassword, Value: "not1234567"},
-				v1.EnvVar{Name: eirini.EnvAPIAddress, Value: "api.bosh-lite.com"},
-				v1.EnvVar{Name: eirini.EnvEiriniAddress, Value: "http://opi.cf.internal"},
-			))
-		}
 
 		JustBeforeEach(func() {
 			err = desirer.Desire(task)
@@ -124,15 +124,15 @@ var _ = Describe("Desiretask", func() {
 			Expect(job.Spec.Template.Spec.Volumes).To(HaveLen(1))
 			volume := job.Spec.Template.Spec.Volumes[0]
 
-			Expect(volume.Name).To(Equal("cc_certs_volume"))
-			Expect(volume.VolumeSource.ConfigMap.Name).To(Equal("cc_certs"))
+			Expect(volume.Name).To(Equal("cc-certs-volume"))
+			Expect(volume.VolumeSource.ConfigMap.Name).To(Equal("cc-certs"))
 		}
 
 		assertContainerVolumeMount := func(job *batch.Job) {
 			Expect(job.Spec.Template.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
 			mount := job.Spec.Template.Spec.Containers[0].VolumeMounts[0]
 
-			Expect(mount.Name).To(Equal("cc_certs_volume"))
+			Expect(mount.Name).To(Equal("cc-certs-volume"))
 			Expect(mount.ReadOnly).To(Equal(true))
 			Expect(mount.MountPath).To(Equal("/etc/config/certs"))
 		}
@@ -153,8 +153,14 @@ var _ = Describe("Desiretask", func() {
 
 		It("should desire the staging task", func() {
 			job, getErr := fakeClient.BatchV1().Jobs(Namespace).Get("the-stage-is-yours", meta_v1.GetOptions{})
-
 			Expect(getErr).ToNot(HaveOccurred())
+
+			assertGeneralSpec(job)
+
+			containers := job.Spec.Template.Spec.Containers
+			Expect(containers).To(HaveLen(1))
+
+			assertContainer(containers[0])
 			assertStagingSpec(job)
 		})
 

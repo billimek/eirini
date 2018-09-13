@@ -30,8 +30,8 @@ const (
 	//cc-uploader certs
 	CCUploaderInternalURL = "cc-uploader.service.cf.internal"
 	CCCertsMountPath      = "/etc/config/certs"
-	CCCertsConfigMapName  = "cc_certs"
-	CCCertsVolumeName     = "cc_certs_volume"
+	CCCertsConfigMapName  = "cc-certs"
+	CCCertsVolumeName     = "cc-certs-volume"
 )
 
 //go:generate counterfeiter . CfClient
