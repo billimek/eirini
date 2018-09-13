@@ -68,7 +68,7 @@ func (s *Stager) createStagingTask(stagingGUID string, request cc_messages.Stagi
 		Image: StagerImage,
 		Env: map[string]string{
 			eirini.EnvDownloadURL:        lifecycleData.AppBitsDownloadUri,
-			eirini.EnvUploadURL:          lifecycleData.DropletUploadUri,
+			eirini.EnvDropletUploadURL:   lifecycleData.DropletUploadUri,
 			eirini.EnvBuildpacks:         string(buildpacksJSON),
 			eirini.EnvAppID:              request.LogGuid,
 			eirini.EnvStagingGUID:        stagingGUID,

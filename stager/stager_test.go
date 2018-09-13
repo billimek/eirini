@@ -106,7 +106,7 @@ var _ = Describe("Stager", func() {
 				Image: "eirini/recipe",
 				Env: map[string]string{
 					eirini.EnvDownloadURL:        "example.com/download",
-					eirini.EnvUploadURL:          "example.com/upload",
+					eirini.EnvDropletUploadURL:   "example.com/upload",
 					eirini.EnvAppID:              request.LogGuid,
 					eirini.EnvStagingGUID:        stagingGUID,
 					eirini.EnvCompletionCallback: request.CompletionCallback,

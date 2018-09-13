@@ -19,7 +19,7 @@ func main() {
 	stagingGUID := os.Getenv(eirini.EnvStagingGUID)
 	completionCallback := os.Getenv(eirini.EnvCompletionCallback)
 	eiriniAddress := os.Getenv(eirini.EnvEiriniAddress)
-	dropletDownloadURL := os.Getenv(eirini.EnvDropletDownloadURL)
+	dropletUploadURL := os.Getenv(eirini.EnvDropletUploadURL)
 	buildpacks := os.Getenv(eirini.EnvBuildpacks)
 
 	username := os.Getenv(eirini.EnvCfUsername)
@@ -70,7 +70,7 @@ func main() {
 		StagingGUID:        stagingGUID,
 		CompletionCallback: completionCallback,
 		EiriniAddr:         eiriniAddress,
-		DropletUploadURL:   dropletDownloadURL,
+		DropletUploadURL:   dropletUploadURL,
 	}
 	err = executor.ExecuteRecipe(recipeConf)
 	if err != nil {
