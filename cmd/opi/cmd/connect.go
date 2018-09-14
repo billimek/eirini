@@ -98,7 +98,6 @@ func initBifrost(cfg *eirini.Config, workChan chan []*eirini.Routes) eirini.Bifr
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: cfg.Properties.InsecureSkipVerify,
 		},
-		// DisableCompression: true,
 	}}
 
 	syncLogger := lager.NewLogger("bifrost")
