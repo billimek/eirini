@@ -13,7 +13,6 @@ import (
 const (
 	//Environment Variable Names
 	EnvDownloadURL        = "DOWNLOAD_URL"
-	EnvUploadURL          = "UPLOAD_URL"
 	EnvBuildpacks         = "BUILDPACKS"
 	EnvDropletUploadURL   = "DROPLET_UPLOAD_URL"
 	EnvAppID              = "APP_ID"

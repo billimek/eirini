@@ -42,7 +42,7 @@ var _ = Describe("Desiretask", func() {
 
 		Expect(container.Env).To(ConsistOf(
 			v1.EnvVar{Name: eirini.EnvDownloadURL, Value: "example.com/download"},
-			v1.EnvVar{Name: eirini.EnvUploadURL, Value: "example.com/upload"},
+			v1.EnvVar{Name: eirini.EnvDropletUploadURL, Value: "example.com/upload"},
 			v1.EnvVar{Name: eirini.EnvAppID, Value: "env-app-id"},
 			v1.EnvVar{Name: eirini.EnvStagingGUID, Value: "the-stage-is-yours"},
 			v1.EnvVar{Name: eirini.EnvCompletionCallback, Value: "example.com/call/me/maybe"},
@@ -59,7 +59,7 @@ var _ = Describe("Desiretask", func() {
 			Image: Image,
 			Env: map[string]string{
 				eirini.EnvDownloadURL:        "example.com/download",
-				eirini.EnvUploadURL:          "example.com/upload",
+				eirini.EnvDropletUploadURL:   "example.com/upload",
 				eirini.EnvAppID:              "env-app-id",
 				eirini.EnvStagingGUID:        "the-stage-is-yours",
 				eirini.EnvCompletionCallback: "example.com/call/me/maybe",
