@@ -31,7 +31,7 @@ func reg(cmd *cobra.Command, args []string) {
 	cert, _ := cmd.Flags().GetString("cert")
 	key, _ := cmd.Flags().GetString("key")
 
-	go log.Fatal(http.ListenAndServeTLS("0.0.0.0:8081", cert, key, registry.NewHandler(
+	log.Fatal(http.ListenAndServeTLS("0.0.0.0:8080", cert, key, registry.NewHandler(
 		registry.BlobRef{
 			Digest: rootfsDigest,
 			Size:   rootfsSize,
