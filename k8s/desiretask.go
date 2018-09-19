@@ -13,9 +13,10 @@ import (
 const ActiveDeadlineSeconds = 900
 
 type TaskDesirer struct {
-	Namespace    string
-	CCUploaderIP string
-	Client       kubernetes.Interface
+	Namespace       string
+	CCUploaderIP    string
+	CertsSecretName string
+	Client          kubernetes.Interface
 }
 
 func (d *TaskDesirer) Desire(task *opi.Task) error {
@@ -49,7 +50,7 @@ func (d *TaskDesirer) toStagingJob(task *opi.Task) *batch.Job {
 			Name: eirini.CCCertsVolumeName,
 			VolumeSource: v1.VolumeSource{
 				Secret: &v1.SecretVolumeSource{
-					SecretName: eirini.CCCertsSecretName,
+					SecretName: d.CertsSecretName,
 				},
 			},
 		},
