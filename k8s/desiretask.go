@@ -51,6 +51,11 @@ func (d *TaskDesirer) toStagingJob(task *opi.Task) *batch.Job {
 			VolumeSource: v1.VolumeSource{
 				Secret: &v1.SecretVolumeSource{
 					SecretName: d.CertsSecretName,
+					Items: []v1.KeyToPath{
+						{Key: eirini.CCUploaderCertName, Path: eirini.CCUploaderCertName},
+						{Key: eirini.CCUploaderKeyName, Path: eirini.CCUploaderKeyName},
+						{Key: eirini.CCInternalCACertName, Path: eirini.CCInternalCACertName},
+					},
 				},
 			},
 		},
