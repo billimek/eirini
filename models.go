@@ -30,7 +30,7 @@ const (
 	CCUploaderInternalURL = "cc-uploader.service.cf.internal"
 	CCCertsMountPath      = "/etc/config/certs"
 	CCCertsVolumeName     = "cc-certs-volume"
-	CCUploaderCertName    = "cc-uploader-cert"
+	CCUploaderCertName    = "cc-uploader-crt"
 	CCUploaderKeyName     = "cc-uploader-key"
 	CCInternalCACertName  = "internal-ca-cert"
 )
